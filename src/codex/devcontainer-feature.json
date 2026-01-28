@@ -1,0 +1,17 @@
+{
+    "id": "codex",
+    "version": "1.0.0",
+    "name": "Codex",
+    "documentationURL": "https://github.com/openai/codex",
+    "description": "Installs Codex, OpenAI's lightweight coding agent that runs in your terminal. Requires Node.js 22+.",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "latest",
+            "description": "Version of Codex to install (e.g., 'latest', '1.0.0')"
+        }
+    },
+    "installsAfter": [
+        "./node"
+    ]
+}

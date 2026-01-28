@@ -1,0 +1,17 @@
+{
+    "id": "node",
+    "version": "1.0.0",
+    "name": "Node.js",
+    "description": "Installs Node.js if not present. Validates existing installations meet minimum version requirements.",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "22",
+            "description": "Node.js version to install if not present (e.g., '22', '20', 'lts')"
+        }
+    },
+    "containerEnv": {
+        "NVM_DIR": "/usr/local/share/nvm",
+        "PATH": "/usr/local/share/nvm/current/bin:${PATH}"
+    }
+}
