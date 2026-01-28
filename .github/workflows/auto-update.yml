@@ -1,0 +1,52 @@
+name: Auto-Update Features
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # Daily at 7AM UTC
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check for Updates
+        id: check
+        run: |
+          node .github/scripts/check-updates.js > update_output.txt
+          cat update_output.txt
+          if grep -q "::set-output name=updated::true" update_output.txt; then
+            echo "updated=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate Docs
+        if: steps.check.outputs.updated == 'true'
+        uses: devcontainers/action@v1
+        with:
+          generate-docs: true
+          base-path-to-features: ./src
+
+      - name: Run Tests
+        if: steps.check.outputs.updated == 'true'
+        uses: devcontainers/action@v1
+        with:
+          subcommand: test
+          base-path-to-features: ./src
+
+      - name: Commit and Push
+        if: steps.check.outputs.updated == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: auto-update feature versions"
+          file_pattern: "src/**"

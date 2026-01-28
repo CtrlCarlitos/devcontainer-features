@@ -1,0 +1,17 @@
+{
+    "id": "opencode",
+    "version": "1.0.0",
+    "name": "OpenCode",
+    "documentationURL": "https://github.com/opencode-ai/opencode",
+    "description": "Installs OpenCode, a powerful AI coding agent built for the terminal. Requires Node.js 18+.",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "latest",
+            "description": "Version of OpenCode to install (e.g., 'latest', '1.0.0')"
+        }
+    },
+    "installsAfter": [
+        "./node"
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "id": "bmad-method",
+    "version": "1.0.0",
+    "name": "BMad Method",
+    "documentationURL": "https://github.com/bmad-code-org/BMAD-METHOD",
+    "description": "Installs BMad Method, an AI agent framework for Agile AI-driven development. Requires Node.js 20+.",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "stable",
+            "description": "Version of BMad Method to install (e.g., 'stable', 'alpha', '4.12.0')"
+        }
+    },
+    "installsAfter": [
+        "./node"
+    ]
+}

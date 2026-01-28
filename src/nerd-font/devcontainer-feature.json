@@ -1,0 +1,22 @@
+{
+    "id": "nerd-font",
+    "version": "1.0.0",
+    "name": "Nerd Font",
+    "documentationURL": "https://github.com/ryanoasis/nerd-fonts",
+    "description": "Installs Nerd Fonts (e.g. Meslo, FiraCode) and updates font cache.",
+    "options": {
+        "fonts": {
+            "type": "string",
+            "default": "Meslo",
+            "description": "Comma-separated list of fonts to install (e.g. 'Meslo,FiraCode,JetBrainsMono'). Must match the Nerd Fonts release zip filenames."
+        },
+        "version": {
+            "type": "string",
+            "default": "3.4.0",
+            "description": "Version of Nerd Fonts to install (e.g. '3.4.0', '3.1.1')"
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/common-utils"
+    ]
+}
