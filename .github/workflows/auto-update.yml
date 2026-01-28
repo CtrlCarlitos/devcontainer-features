@@ -39,7 +39,7 @@ jobs:
 
       - name: Run Tests
         if: steps.check.outputs.updated == 'true'
-        run: devcontainer features test --base-path ./src
+        run: devcontainer features test --project-folder .
 
       - name: Commit and Push
         if: steps.check.outputs.updated == 'true'
