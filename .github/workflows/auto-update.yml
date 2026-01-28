@@ -39,10 +39,7 @@ jobs:
 
       - name: Run Tests
         if: steps.check.outputs.updated == 'true'
-        uses: devcontainers/action@v1
-        with:
-          subcommand: test
-          base-path-to-features: ./src
+        run: devcontainer features test --base-path ./src
 
       - name: Commit and Push
         if: steps.check.outputs.updated == 'true'
