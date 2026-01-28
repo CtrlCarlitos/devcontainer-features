@@ -17,8 +17,4 @@ jobs:
         run: npm install -g @devcontainers/cli
 
       - name: "Run Smoke Tests"
-        # We use the CLI directly or the action. The action is easier.
-        uses: devcontainers/action@v1
-        with:
-          base-path-to-features: ./src
-          subcommand: test
+        run: devcontainer features test --base-path ./src
