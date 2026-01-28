@@ -1,17 +1,24 @@
-# BMad Method
+
+# BMad Method (bmad-method)
 
 Installs BMad Method, an AI agent framework for Agile AI-driven development. Requires Node.js 20+.
 
-## Options
-
-| Option | Description | Type | Default |
-|---|---|---|---|
-| `version` | Version of BMad Method to install (e.g., 'stable', 'alpha', '4.12.0') | string | `stable` |
-
-## Usage
+## Example Usage
 
 ```json
 "features": {
-    "bmad-method": {}
+    "ghcr.io/CtrlCarlitos/devcontainer-features/bmad-method:1": {}
 }
 ```
+
+## Options
+
+| Options Id | Description | Type | Default Value |
+|-----|-----|-----|-----|
+| version | Version of BMad Method to install (e.g., 'stable', 'alpha', '4.12.0') | string | stable |
+
+
+
+---
+
+_Note: This file was auto-generated from the [devcontainer-feature.json](https://github.com/CtrlCarlitos/devcontainer-features/blob/main/src/bmad-method/devcontainer-feature.json).  Add additional notes to a `NOTES.md`._
