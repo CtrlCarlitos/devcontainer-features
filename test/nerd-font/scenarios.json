@@ -1,0 +1,8 @@
+{
+    "default": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "./src/nerd-font": "latest"
+        }
+    }
+}
