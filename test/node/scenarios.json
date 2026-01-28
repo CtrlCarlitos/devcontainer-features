@@ -2,7 +2,7 @@
     "default": {
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {
-            "./src/node": "latest"
+            "../../src/node": "latest"
         }
     }
 }
