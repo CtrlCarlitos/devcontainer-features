@@ -3,7 +3,7 @@
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {
             "ghcr.io/ctrlcarlitos/devcontainer-features/node:latest": {},
-            "../../src/bmad-method": "latest"
+            "bmad-method": "latest"
         }
     }
 }
