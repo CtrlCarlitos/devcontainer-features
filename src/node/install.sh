@@ -38,6 +38,15 @@ if ensure_node_version; then
     exit 0
 fi
 
+case "$VERSION" in
+    latest)
+        VERSION="node"
+        ;;
+    lts)
+        VERSION="lts/*"
+        ;;
+esac
+
 echo "Node.js not found. Installing version ${VERSION}..."
 
 require_apt

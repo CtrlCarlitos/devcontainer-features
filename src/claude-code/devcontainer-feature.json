@@ -12,6 +12,7 @@
         }
     },
     "installsAfter": [
-        "./node"
+        "./node",
+        "ghcr.io/ctrlcarlitos/devcontainer-features/node"
     ]
 }
