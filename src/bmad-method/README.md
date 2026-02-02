@@ -15,7 +15,7 @@ Installs BMad Method, an AI agent framework for Agile AI-driven development. Req
 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
-| version | Version of BMad Method to install (e.g., 'stable', 'alpha', '4.12.0') | string | 6.0.0-Beta.2 |
+| version | Version of BMad Method to install (e.g., 'stable', 'alpha', '4.12.0') | string | 6.0.0-Beta.5 |
 
 
 

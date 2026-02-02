@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 VERSION="${VERSION:-latest}"
 MIN_NODE_VERSION=18
@@ -29,9 +29,9 @@ check_node_version
 echo "Installing OpenCode..."
 
 if [ "$VERSION" = "latest" ]; then
-    npm install -g opencode-ai@latest
+    npm install -g --no-fund --no-audit opencode-ai@latest
 else
-    npm install -g opencode-ai@"$VERSION"
+    npm install -g --no-fund --no-audit opencode-ai@"$VERSION"
 fi
 
 echo "OpenCode installed successfully!"

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 VERSION="${VERSION:-latest}"
 MIN_NODE_VERSION=18
@@ -29,9 +29,9 @@ check_node_version
 echo "Installing Claude Code..."
 
 if [ "$VERSION" = "latest" ]; then
-    npm install -g @anthropic-ai/claude-code
+    npm install -g --no-fund --no-audit @anthropic-ai/claude-code
 else
-    npm install -g @anthropic-ai/claude-code@"$VERSION"
+    npm install -g --no-fund --no-audit @anthropic-ai/claude-code@"$VERSION"
 fi
 
 echo "Claude Code installed successfully!"

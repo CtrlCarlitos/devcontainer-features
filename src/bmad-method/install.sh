@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 VERSION="${VERSION:-stable}"
 MIN_NODE_VERSION=20
@@ -29,11 +29,11 @@ check_node_version
 echo "Installing BMad Method..."
 
 if [ "$VERSION" = "stable" ] || [ "$VERSION" = "latest" ]; then
-    npm install -g bmad-method@stable
+    npm install -g --no-fund --no-audit bmad-method@stable
 elif [ "$VERSION" = "alpha" ]; then
-    npm install -g bmad-method@alpha
+    npm install -g --no-fund --no-audit bmad-method@alpha
 else
-    npm install -g bmad-method@"$VERSION"
+    npm install -g --no-fund --no-audit bmad-method@"$VERSION"
 fi
 
 echo "BMad Method installed successfully!"

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 VERSION="${VERSION:-latest}"
 MIN_NODE_VERSION=22
@@ -29,9 +29,9 @@ check_node_version
 echo "Installing Codex..."
 
 if [ "$VERSION" = "latest" ]; then
-    npm install -g @openai/codex
+    npm install -g --no-fund --no-audit @openai/codex
 else
-    npm install -g @openai/codex@"$VERSION"
+    npm install -g --no-fund --no-audit @openai/codex@"$VERSION"
 fi
 
 echo "Codex installed successfully!"

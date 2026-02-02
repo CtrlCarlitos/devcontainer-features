@@ -20,6 +20,9 @@ async function fetchJson(url) {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
+                if (res.statusCode && res.statusCode >= 400) {
+                    return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
+                }
                 try {
                     resolve(JSON.parse(data));
                 } catch (e) {
@@ -28,6 +31,14 @@ async function fetchJson(url) {
             });
         }).on('error', reject);
     });
+}
+
+function setOutput(name, value) {
+    if (process.env.GITHUB_OUTPUT) {
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`);
+    } else {
+        console.log(`${name}=${value}`);
+    }
 }
 
 async function getLatestVersion(featureId) {
@@ -97,7 +108,7 @@ async function updateFeatures() {
     }
 
     if (updated) {
-        console.log("::set-output name=updated::true");
+        setOutput('updated', 'true');
     }
 }
 
