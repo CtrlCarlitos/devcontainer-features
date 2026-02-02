@@ -2,8 +2,12 @@
     "default": {
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {
-            "ghcr.io/ctrlcarlitos/devcontainer-features/node:latest": {},
-            "bmad-method": "latest"
+            "node": {
+                "version": "22"
+            },
+            "bmad-method": {
+                "version": "6.0.0-Beta.5"
+            }
         }
     }
 }

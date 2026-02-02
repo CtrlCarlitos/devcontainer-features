@@ -18,11 +18,30 @@ echo "Installing Nerd Fonts (Version: ${VERSION})..."
 require_apt
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends unzip fontconfig
+apt-get install -y --no-install-recommends unzip fontconfig curl
 rm -rf /var/lib/apt/lists/*
 
 # Create directory
 mkdir -p "$FONT_DIR"
+
+# Resolve latest version if requested
+if [ "$VERSION" = "latest" ]; then
+    echo "Resolving latest Nerd Fonts release..."
+    if command -v curl >/dev/null 2>&1; then
+        VERSION=$(curl -fsSL "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" \
+            | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' \
+            | head -n1)
+    elif command -v wget >/dev/null 2>&1; then
+        VERSION=$(wget -qO- "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" \
+            | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' \
+            | head -n1)
+    fi
+
+    if [ -z "$VERSION" ]; then
+        echo "Error: Unable to resolve latest Nerd Fonts version."
+        exit 1
+    fi
+fi
 
 # Split comma-separated fonts into array
 IFS=',' read -ra FONT_LIST <<< "$FONTS"

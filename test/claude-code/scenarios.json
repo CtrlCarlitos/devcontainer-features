@@ -2,7 +2,9 @@
     "default": {
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {
-            "ghcr.io/ctrlcarlitos/devcontainer-features/node:latest": {},
+            "node": {
+                "version": "22"
+            },
             "claude-code": "latest"
         }
     }
