@@ -6,5 +6,23 @@
                 "version": "3.4.0"
             }
         }
+    },
+    "multi-font": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "nerd-font": {
+                "fonts": "FiraCode,JetBrainsMono",
+                "version": "3.4.0"
+            }
+        }
+    },
+    "latest-version": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "nerd-font": {
+                "fonts": "Hack",
+                "version": "latest"
+            }
+        }
     }
 }

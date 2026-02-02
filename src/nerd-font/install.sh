@@ -4,6 +4,13 @@ set -euo pipefail
 FONT_DIR="/usr/local/share/fonts"
 VERSION="${VERSION:-3.4.0}"
 FONTS="${FONTS:-Meslo}"
+MAX_RETRIES=3
+
+# Cleanup temporary files on exit
+cleanup() {
+    rm -f /tmp/*.zip 2>/dev/null || true
+}
+trap cleanup EXIT
 
 # Validates version string format
 validate_version() {
@@ -20,6 +27,30 @@ require_apt() {
         echo "ERROR: apt-get not found. This feature supports Debian/Ubuntu base images only."
         exit 1
     fi
+}
+
+# Retries curl download with exponential backoff
+curl_with_retry() {
+    local url="$1"
+    local output="$2"
+    local attempt=1
+    local delay=5
+
+    while [ $attempt -le $MAX_RETRIES ]; do
+        echo "Downloading (attempt $attempt/$MAX_RETRIES)..."
+        if curl -fsSL -o "$output" "$url"; then
+            return 0
+        fi
+        if [ $attempt -lt $MAX_RETRIES ]; then
+            echo "Download failed, retrying in ${delay}s..."
+            sleep $delay
+            delay=$((delay * 2))
+        fi
+        attempt=$((attempt + 1))
+    done
+
+    echo "ERROR: Failed to download after $MAX_RETRIES attempts"
+    return 1
 }
 
 validate_version "$VERSION"
@@ -69,16 +100,11 @@ for FONT_NAME in "${FONT_LIST[@]}"; do
     echo "Processing font: $FONT_NAME"
     FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v${VERSION}/${FONT_NAME}.zip"
 
-    # Download and unzip
+    # Download with retry
     echo "Downloading ${FONT_NAME} from ${FONT_URL}..."
-    if ! curl -fsSL -o "/tmp/${FONT_NAME}.zip" "$FONT_URL"; then
+    if ! curl_with_retry "$FONT_URL" "/tmp/${FONT_NAME}.zip"; then
         echo "ERROR: Failed to download ${FONT_NAME}.zip. Check version and font name."
         exit 1
-    fi
-
-    if [ ! -f "/tmp/${FONT_NAME}.zip" ]; then
-         echo "ERROR: Failed to download ${FONT_NAME}.zip. Check version and font name."
-         exit 1
     fi
 
     echo "Extracting ${FONT_NAME}..."

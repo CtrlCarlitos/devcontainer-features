@@ -9,6 +9,7 @@ This repository provides a small set of Dev Container Features for AI tooling an
 | `node` | Installs Node.js via nvm | - |
 | `claude-code` | Anthropic's Claude Code CLI | 18+ |
 | `opencode` | OpenCode AI terminal agent | 18+ |
+| `gemini-cli` | Google's Gemini CLI | 20+ |
 | `bmad-method` | BMad Agile AI framework | 20+ |
 | `codex` | OpenAI's Codex CLI | 22+ |
 | `nerd-font` | Nerd Fonts (Meslo, etc.) | - |
@@ -21,6 +22,7 @@ The `node` feature defaults to **v22**, which satisfies all feature requirements
 node (default: 22)
     ├── codex (requires 22+) ✅
     ├── bmad-method (requires 20+) ✅
+    ├── gemini-cli (requires 20+) ✅
     ├── claude-code (requires 18+) ✅
     └── opencode (requires 18+) ✅
 ```

@@ -1,0 +1,18 @@
+{
+    "id": "gemini-cli",
+    "version": "1.0.2",
+    "name": "Gemini CLI",
+    "documentationURL": "https://github.com/google-gemini/gemini-cli",
+    "description": "Installs Gemini CLI, Google's open-source AI agent for terminal access to Gemini models. Requires Node.js 20+.",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "latest",
+            "description": "Version of Gemini CLI to install (e.g., 'latest', '1.0.0')"
+        }
+    },
+    "installsAfter": [
+        "./node",
+        "ghcr.io/ctrlcarlitos/devcontainer-features/node"
+    ]
+}

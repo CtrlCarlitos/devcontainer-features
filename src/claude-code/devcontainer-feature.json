@@ -1,6 +1,6 @@
 {
     "id": "claude-code",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "name": "Claude Code",
     "documentationURL": "https://github.com/anthropics/claude-code",
     "description": "Installs Claude Code, Anthropic's official CLI for Claude. Requires Node.js 18+.",

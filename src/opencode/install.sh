@@ -4,6 +4,7 @@ set -euo pipefail
 VERSION="${VERSION:-latest}"
 MIN_NODE_VERSION=18
 FEATURE_NAME="OpenCode"
+MAX_RETRIES=3
 
 # Validates version string format
 validate_version() {
@@ -13,6 +14,29 @@ validate_version() {
         echo "Use 'latest', 'stable', 'alpha', 'lts', or a semver version (e.g., '1.2.3')"
         exit 1
     fi
+}
+
+# Retries npm install with exponential backoff
+npm_install_with_retry() {
+    local package="$1"
+    local attempt=1
+    local delay=5
+
+    while [ $attempt -le $MAX_RETRIES ]; do
+        echo "Installing $package (attempt $attempt/$MAX_RETRIES)..."
+        if npm install -g --no-fund --no-audit --ignore-scripts "$package"; then
+            return 0
+        fi
+        if [ $attempt -lt $MAX_RETRIES ]; then
+            echo "Install failed, retrying in ${delay}s..."
+            sleep $delay
+            delay=$((delay * 2))
+        fi
+        attempt=$((attempt + 1))
+    done
+
+    echo "ERROR: Failed to install $package after $MAX_RETRIES attempts"
+    return 1
 }
 
 # Validates Node.js and npm are installed and meet minimum version
@@ -77,9 +101,9 @@ echo "Installing OpenCode..."
 validate_version "$VERSION"
 
 if [ "$VERSION" = "latest" ]; then
-    npm install -g --no-fund --no-audit opencode-ai@latest
+    npm_install_with_retry "opencode-ai@latest"
 else
-    npm install -g --no-fund --no-audit opencode-ai@"$VERSION"
+    npm_install_with_retry "opencode-ai@$VERSION"
 fi
 
 if ! verify_cli_installation "opencode"; then
