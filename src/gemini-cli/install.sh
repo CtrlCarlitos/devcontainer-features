@@ -2,8 +2,8 @@
 set -euo pipefail
 
 VERSION="${VERSION:-latest}"
-MIN_NODE_VERSION=18
-FEATURE_NAME="Claude Code"
+MIN_NODE_VERSION=20
+FEATURE_NAME="Gemini CLI"
 MAX_RETRIES=3
 
 # Validates version string format
@@ -96,19 +96,19 @@ verify_cli_installation() {
 
 check_node_version
 
-echo "Installing Claude Code..."
+echo "Installing Gemini CLI..."
 
 validate_version "$VERSION"
 
 if [ "$VERSION" = "latest" ]; then
-    npm_install_with_retry "@anthropic-ai/claude-code"
+    npm_install_with_retry "@google/gemini-cli"
 else
-    npm_install_with_retry "@anthropic-ai/claude-code@$VERSION"
+    npm_install_with_retry "@google/gemini-cli@$VERSION"
 fi
 
-if ! verify_cli_installation "claude"; then
-    echo "ERROR: Feature \"$FEATURE_NAME\" (Unknown) failed to install! Look at the documentation at https://github.com/anthropics/claude-code for help troubleshooting this error."
+if ! verify_cli_installation "gemini"; then
+    echo "ERROR: Feature \"$FEATURE_NAME\" (Unknown) failed to install! Look at the documentation at https://github.com/google-gemini/gemini-cli for help troubleshooting this error."
     exit 1
 fi
 
-echo "Claude Code installed successfully!"
+echo "Gemini CLI installed successfully!"

@@ -3,6 +3,14 @@ set -euo pipefail
 
 VERSION="${VERSION:-22}"
 
+echo "Node.js Feature: Checking installation..."
+
+# Exit gracefully if Node.js is already installed
+if command -v node &> /dev/null; then
+    echo "Node.js $(node --version) is already installed. Skipping."
+    exit 0
+fi
+
 # Validates version string format
 validate_version() {
     local version="$1"
@@ -13,8 +21,6 @@ validate_version() {
     fi
 }
 
-echo "Node.js Feature: Checking installation..."
-
 validate_version "$VERSION"
 
 require_apt() {
@@ -23,40 +29,6 @@ require_apt() {
         exit 1
     fi
 }
-
-ensure_node_version() {
-    if ! command -v node &> /dev/null; then
-        return 1
-    fi
-
-    local current_version
-    current_version=$(node --version | sed 's/v//')
-    local current_major
-    current_major=$(echo "$current_version" | cut -d. -f1)
-
-    if ! [[ "$current_major" =~ ^[0-9]+$ ]]; then
-        echo "ERROR: Could not parse Node.js version: $current_version"
-        exit 1
-    fi
-
-    echo "Node.js v${current_version} is already installed (major version: ${current_major})"
-
-    if [[ "$VERSION" =~ ^[0-9]+$ ]]; then
-        if [ "$current_major" -ge "$VERSION" ]; then
-            echo "Installed Node.js meets requested major version ${VERSION}. Skipping installation."
-            return 0
-        fi
-        echo "Installed Node.js is older than requested major ${VERSION}. Will install via nvm."
-        return 1
-    fi
-
-    echo "Requested version is '${VERSION}'. Will install via nvm to ensure correct version."
-    return 1
-}
-
-if ensure_node_version; then
-    exit 0
-fi
 
 case "$VERSION" in
     latest)

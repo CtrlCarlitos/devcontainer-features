@@ -1,9 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-VERSION="${VERSION:-stable}"
+VERSION="${VERSION:-6.0.0-Beta.5}"
 MIN_NODE_VERSION=20
 FEATURE_NAME="BMad Method"
+MAX_RETRIES=3
 
 # Validates version string format
 validate_version() {
@@ -13,6 +14,29 @@ validate_version() {
         echo "Use 'latest', 'stable', 'alpha', 'lts', or a semver version (e.g., '1.2.3')"
         exit 1
     fi
+}
+
+# Retries npm install with exponential backoff
+npm_install_with_retry() {
+    local package="$1"
+    local attempt=1
+    local delay=5
+
+    while [ $attempt -le $MAX_RETRIES ]; do
+        echo "Installing $package (attempt $attempt/$MAX_RETRIES)..."
+        if npm install -g --no-fund --no-audit --ignore-scripts "$package"; then
+            return 0
+        fi
+        if [ $attempt -lt $MAX_RETRIES ]; then
+            echo "Install failed, retrying in ${delay}s..."
+            sleep $delay
+            delay=$((delay * 2))
+        fi
+        attempt=$((attempt + 1))
+    done
+
+    echo "ERROR: Failed to install $package after $MAX_RETRIES attempts"
+    return 1
 }
 
 # Validates Node.js and npm are installed and meet minimum version
@@ -77,11 +101,11 @@ echo "Installing BMad Method..."
 validate_version "$VERSION"
 
 if [ "$VERSION" = "stable" ] || [ "$VERSION" = "latest" ]; then
-    npm install -g --no-fund --no-audit bmad-method@latest
+    npm_install_with_retry "bmad-method@latest"
 elif [ "$VERSION" = "alpha" ]; then
-    npm install -g --no-fund --no-audit bmad-method@alpha
+    npm_install_with_retry "bmad-method@alpha"
 else
-    npm install -g --no-fund --no-audit bmad-method@"$VERSION"
+    npm_install_with_retry "bmad-method@$VERSION"
 fi
 
 # Verify installation - bmad-method provides both 'bmad' and 'bmad-method' binaries

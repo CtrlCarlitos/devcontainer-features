@@ -1,0 +1,11 @@
+{
+    "default": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "node": {
+                "version": "22"
+            },
+            "gemini-cli": "latest"
+        }
+    }
+}

@@ -1,9 +1,17 @@
 {
     "id": "nerd-font",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "name": "Nerd Font",
     "documentationURL": "https://github.com/ryanoasis/nerd-fonts",
     "description": "Installs Nerd Fonts (e.g. Meslo, FiraCode) and updates font cache.",
+    "keywords": [
+        "font",
+        "nerd-fonts",
+        "terminal",
+        "icons",
+        "powerline",
+        "monospace"
+    ],
     "options": {
         "fonts": {
             "type": "string",
