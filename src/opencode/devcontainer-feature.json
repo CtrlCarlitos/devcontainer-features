@@ -1,6 +1,6 @@
 {
     "id": "opencode",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "OpenCode",
     "documentationURL": "https://github.com/opencode-ai/opencode",
     "description": "Installs OpenCode, a powerful AI coding agent built for the terminal. Requires Node.js 18+.",

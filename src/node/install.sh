@@ -3,7 +3,19 @@ set -euo pipefail
 
 VERSION="${VERSION:-22}"
 
+# Validates version string format
+validate_version() {
+    local version="$1"
+    if [[ ! "$version" =~ ^(latest|lts|node|[0-9]+)$ ]]; then
+        echo "ERROR: Invalid version format: $version"
+        echo "Use 'latest', 'lts', or a major version number (e.g., '22', '20', '18')"
+        exit 1
+    fi
+}
+
 echo "Node.js Feature: Checking installation..."
+
+validate_version "$VERSION"
 
 require_apt() {
     if ! command -v apt-get >/dev/null 2>&1; then
@@ -17,12 +29,20 @@ ensure_node_version() {
         return 1
     fi
 
-    CURRENT_VERSION=$(node --version | sed 's/v//')
-    CURRENT_MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
-    echo "Node.js v${CURRENT_VERSION} is already installed (major version: ${CURRENT_MAJOR})"
+    local current_version
+    current_version=$(node --version | sed 's/v//')
+    local current_major
+    current_major=$(echo "$current_version" | cut -d. -f1)
+
+    if ! [[ "$current_major" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: Could not parse Node.js version: $current_version"
+        exit 1
+    fi
+
+    echo "Node.js v${current_version} is already installed (major version: ${current_major})"
 
     if [[ "$VERSION" =~ ^[0-9]+$ ]]; then
-        if [ "$CURRENT_MAJOR" -ge "$VERSION" ]; then
+        if [ "$current_major" -ge "$VERSION" ]; then
             echo "Installed Node.js meets requested major version ${VERSION}. Skipping installation."
             return 0
         fi
@@ -47,7 +67,7 @@ case "$VERSION" in
         ;;
 esac
 
-echo "Node.js not found. Installing version ${VERSION}..."
+echo "Installing Node.js version ${VERSION}..."
 
 require_apt
 
@@ -61,7 +81,7 @@ rm -rf /var/lib/apt/lists/*
 NVM_DIR="/usr/local/share/nvm"
 mkdir -p "$NVM_DIR"
 
-# Install nvm
+# Install nvm (pinned version for reproducibility)
 export NVM_DIR
 curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 

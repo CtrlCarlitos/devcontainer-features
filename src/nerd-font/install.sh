@@ -5,12 +5,24 @@ FONT_DIR="/usr/local/share/fonts"
 VERSION="${VERSION:-3.4.0}"
 FONTS="${FONTS:-Meslo}"
 
+# Validates version string format
+validate_version() {
+    local version="$1"
+    if [[ ! "$version" =~ ^(latest|[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+)$ ]]; then
+        echo "ERROR: Invalid version format: $version"
+        echo "Use 'latest' or a semver version (e.g., '3.4.0', '3.3')"
+        exit 1
+    fi
+}
+
 require_apt() {
     if ! command -v apt-get >/dev/null 2>&1; then
         echo "ERROR: apt-get not found. This feature supports Debian/Ubuntu base images only."
         exit 1
     fi
 }
+
+validate_version "$VERSION"
 
 echo "Installing Nerd Fonts (Version: ${VERSION})..."
 
@@ -27,20 +39,15 @@ mkdir -p "$FONT_DIR"
 # Resolve latest version if requested
 if [ "$VERSION" = "latest" ]; then
     echo "Resolving latest Nerd Fonts release..."
-    if command -v curl >/dev/null 2>&1; then
-        VERSION=$(curl -fsSL "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" \
-            | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' \
-            | head -n1)
-    elif command -v wget >/dev/null 2>&1; then
-        VERSION=$(wget -qO- "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" \
-            | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' \
-            | head -n1)
-    fi
+    VERSION=$(curl -fsSL "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" \
+        | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' \
+        | head -n1)
 
     if [ -z "$VERSION" ]; then
-        echo "Error: Unable to resolve latest Nerd Fonts version."
+        echo "ERROR: Unable to resolve latest Nerd Fonts version (GitHub API may be rate-limited)."
         exit 1
     fi
+    echo "Resolved latest version: ${VERSION}"
 fi
 
 # Split comma-separated fonts into array
@@ -49,13 +56,13 @@ IFS=',' read -ra FONT_LIST <<< "$FONTS"
 for FONT_NAME in "${FONT_LIST[@]}"; do
     # Trim whitespace
     FONT_NAME=$(echo "$FONT_NAME" | xargs)
-    
+
     if [ -z "$FONT_NAME" ]; then
         continue
     fi
 
     if ! [[ "$FONT_NAME" =~ ^[A-Za-z0-9._-]+$ ]]; then
-        echo "Error: Invalid font name '${FONT_NAME}'. Use Nerd Fonts zip file names (letters, numbers, '.', '_' or '-')."
+        echo "ERROR: Invalid font name '${FONT_NAME}'. Use Nerd Fonts zip file names (letters, numbers, '.', '_' or '-')."
         exit 1
     fi
 
@@ -64,19 +71,13 @@ for FONT_NAME in "${FONT_LIST[@]}"; do
 
     # Download and unzip
     echo "Downloading ${FONT_NAME} from ${FONT_URL}..."
-    if command -v curl >/dev/null 2>&1; then
-        curl -fsSL -o "/tmp/${FONT_NAME}.zip" "$FONT_URL"
-    elif command -v wget >/dev/null 2>&1; then
-        wget -O "/tmp/${FONT_NAME}.zip" "$FONT_URL"
-    else
-        echo "Error: neither curl nor wget found."
+    if ! curl -fsSL -o "/tmp/${FONT_NAME}.zip" "$FONT_URL"; then
+        echo "ERROR: Failed to download ${FONT_NAME}.zip. Check version and font name."
         exit 1
     fi
 
     if [ ! -f "/tmp/${FONT_NAME}.zip" ]; then
-         echo "Error: Failed to download ${FONT_NAME}.zip. Check version and font name."
-         # Don't exit here, maybe other fonts work? Or should we strict fail? 
-         # Let's strict fail to alert user of config error
+         echo "ERROR: Failed to download ${FONT_NAME}.zip. Check version and font name."
          exit 1
     fi
 
@@ -86,7 +87,7 @@ for FONT_NAME in "${FONT_LIST[@]}"; do
 done
 
 # Clean up generic junk usually in these zips
-rm -f "$FONT_DIR/"*Windows* "$FONT_DIR/"*Linux* "$FONT_DIR/"*Compatible* "$FONT_DIR/"LICENSE "$FONT_DIR/"readme.md
+rm -f "$FONT_DIR/"*Windows* "$FONT_DIR/"*Linux* "$FONT_DIR/"*Compatible* "$FONT_DIR/"LICENSE "$FONT_DIR/"readme.md 2>/dev/null || true
 
 # Update cache
 echo "Updating font cache..."
