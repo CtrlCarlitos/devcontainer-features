@@ -1,32 +1,25 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 FONT_DIR="/usr/local/share/fonts"
 VERSION="${VERSION:-3.4.0}"
 FONTS="${FONTS:-Meslo}"
 
+require_apt() {
+    if ! command -v apt-get >/dev/null 2>&1; then
+        echo "ERROR: apt-get not found. This feature supports Debian/Ubuntu base images only."
+        exit 1
+    fi
+}
+
 echo "Installing Nerd Fonts (Version: ${VERSION})..."
 
 # Ensure dependencies
-if ! command -v unzip >/dev/null 2>&1; then
-    echo "Installing unzip..."
-    if command -v apt-get >/dev/null 2>&1; then
-        apt-get update && apt-get install -y unzip
-    elif command -v apk >/dev/null 2>&1; then
-        apk add --no-cache unzip
-    else
-        echo "Warning: package manager not found. Assuming unzip is available."
-    fi
-fi
-
-if ! command -v fc-cache >/dev/null 2>&1; then
-    echo "Installing fontconfig..."
-    if command -v apt-get >/dev/null 2>&1; then
-        apt-get update && apt-get install -y fontconfig
-    elif command -v apk >/dev/null 2>&1; then
-        apk add --no-cache fontconfig
-    fi
-fi
+require_apt
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y --no-install-recommends unzip fontconfig
+rm -rf /var/lib/apt/lists/*
 
 # Create directory
 mkdir -p "$FONT_DIR"
@@ -42,13 +35,18 @@ for FONT_NAME in "${FONT_LIST[@]}"; do
         continue
     fi
 
+    if ! [[ "$FONT_NAME" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        echo "Error: Invalid font name '${FONT_NAME}'. Use Nerd Fonts zip file names (letters, numbers, '.', '_' or '-')."
+        exit 1
+    fi
+
     echo "Processing font: $FONT_NAME"
     FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v${VERSION}/${FONT_NAME}.zip"
 
     # Download and unzip
     echo "Downloading ${FONT_NAME} from ${FONT_URL}..."
     if command -v curl >/dev/null 2>&1; then
-        curl -L -f -o "/tmp/${FONT_NAME}.zip" "$FONT_URL"
+        curl -fsSL -o "/tmp/${FONT_NAME}.zip" "$FONT_URL"
     elif command -v wget >/dev/null 2>&1; then
         wget -O "/tmp/${FONT_NAME}.zip" "$FONT_URL"
     else
