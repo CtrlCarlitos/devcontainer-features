@@ -1,18 +1,66 @@
 {
     "id": "claude-code",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "name": "Claude Code",
-    "documentationURL": "https://github.com/anthropics/claude-code",
-    "description": "Installs Claude Code, Anthropic's official CLI for Claude. Requires Node.js 18+.",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/claude-code",
+    "description": "Installs Claude Code AI coding assistant with headless mode and MCP server support. Uses native installer by default (recommended by Anthropic).",
     "options": {
         "version": {
             "type": "string",
             "default": "latest",
-            "description": "Version of Claude Code to install (e.g., 'latest', '1.0.0')"
+            "description": "Claude Code version to install (e.g., 'latest', '1.0.58')"
+        },
+        "installMethod": {
+            "type": "string",
+            "enum": [
+                "native",
+                "npm"
+            ],
+            "default": "native",
+            "description": "Installation method. 'native' (recommended) uses official installer, 'npm' is deprecated but available as fallback"
+        },
+        "enableMcpServer": {
+            "type": "boolean",
+            "default": false,
+            "description": "Configure Claude Code to be available as an MCP server for other agents"
+        },
+        "authMethod": {
+            "type": "string",
+            "enum": [
+                "api-key",
+                "oauth",
+                "none"
+            ],
+            "default": "none",
+            "description": "Preferred authentication method. 'api-key' uses ANTHROPIC_API_KEY env var, 'oauth' requires browser"
+        },
+        "oauthPort": {
+            "type": "string",
+            "default": "52780",
+            "description": "Port for OAuth callback server (for SSH port forwarding when using browser auth)"
+        },
+        "skipPermissions": {
+            "type": "boolean",
+            "default": false,
+            "description": "Run initial setup with --dangerously-skip-permissions for headless environments"
+        }
+    },
+    "containerEnv": {
+        "CLAUDE_CODE_OAUTH_PORT": "${oauthPort}"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "remote.portsAttributes": {
+                    "52780": {
+                        "label": "Claude Code OAuth",
+                        "onAutoForward": "silent"
+                    }
+                }
+            }
         }
     },
     "installsAfter": [
-        "./node",
-        "ghcr.io/ctrlcarlitos/devcontainer-features/node"
+        "ghcr.io/devcontainers/features/common-utils"
     ]
 }
