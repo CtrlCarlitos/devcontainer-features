@@ -1,13 +1,16 @@
 
 # Claude Code (claude-code)
 
-Installs Claude Code, Anthropic's official CLI for Claude. Requires Node.js 18+.
+Installs Claude Code with headless mode and MCP server helpers. Uses the native installer by default (recommended by Anthropic).
 
 ## Example Usage
 
 ```json
 "features": {
-    "ghcr.io/CtrlCarlitos/devcontainer-features/claude-code:1": {}
+    "ghcr.io/CtrlCarlitos/devcontainer-features/claude-code:1": {
+        "installMethod": "native",
+        "skipPermissions": true
+    }
 }
 ```
 
@@ -15,9 +18,28 @@ Installs Claude Code, Anthropic's official CLI for Claude. Requires Node.js 18+.
 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
-| version | Version of Claude Code to install (e.g., 'latest', '1.0.0') | string | latest |
+| version | Claude Code version to install (e.g., 'latest', '1.0.58') | string | latest |
+| installMethod | Installation method. 'native' (recommended) uses official installer, 'npm' is deprecated but available as fallback | string | native |
+| enableMcpServer | Configure Claude Code to be available as an MCP server for other agents | boolean | false |
+| authMethod | Preferred authentication method. 'api-key' uses ANTHROPIC_API_KEY env var, 'oauth' requires browser | string | none |
+| oauthPort | Port for OAuth callback server (for SSH port forwarding when using browser auth) | string | 52780 |
+| skipPermissions | Run initial setup with --dangerously-skip-permissions for headless environments | boolean | false |
 
+## Authentication
 
+Claude Code requires OAuth in a browser or an API key.
+
+- OAuth: use SSH port forwarding to the OAuth port (default `52780`), then run `claude /login` and open the localhost URL in your local browser.
+- API key: set `ANTHROPIC_API_KEY` at runtime.
+
+Run `claude-remote-auth` for step-by-step instructions.
+
+## Helper Commands
+
+- `claude-remote-auth` container authentication guide
+- `claude-headless` run headless prompts (`claude -p`)
+- `claude-mcp-server` start MCP server over stdio
+- `claude-info` show auth status and version
 
 ---
 
