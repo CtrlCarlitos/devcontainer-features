@@ -1,114 +1,332 @@
 #!/bin/bash
-set -euo pipefail
+set -e
 
+# Feature options
 VERSION="${VERSION:-latest}"
-MIN_NODE_VERSION=20
-FEATURE_NAME="Gemini CLI"
-MAX_RETRIES=3
+AUTHMETHOD="${AUTHMETHOD:-none}"
+DEFAULTMODEL="${DEFAULTMODEL:-}"
+ENABLEVERTEXAI="${ENABLEVERTEXAI:-false}"
 
-# Validates version string format
-validate_version() {
-    local version="$1"
-    if [[ ! "$version" =~ ^(latest|stable|alpha|lts|[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?|[0-9]+\.[0-9]+|[0-9]+)$ ]]; then
-        echo "ERROR: Invalid version format: $version"
-        echo "Use 'latest', 'stable', 'alpha', 'lts', or a semver version (e.g., '1.2.3')"
-        exit 1
+# Fixed install location (helper scripts use static paths)
+BIN_DIR="/usr/local/bin"
+
+# ============================================================================
+# Robust User Detection
+# ============================================================================
+get_target_user() {
+    local user="${_REMOTE_USER:-}"
+    [ -z "$user" ] && user="${SUDO_USER:-}"
+    [ -z "$user" ] && user="$(whoami)"
+
+    if ! id "$user" &>/dev/null; then
+        echo "WARNING: Target user '$user' does not exist. Using 'root'." >&2
+        user="root"
     fi
+    echo "$user"
 }
 
-# Retries npm install with exponential backoff
-npm_install_with_retry() {
-    local package="$1"
-    local attempt=1
-    local delay=5
+get_target_home() {
+    local user="$1"
+    local home="${_REMOTE_USER_HOME:-}"
 
-    while [ $attempt -le $MAX_RETRIES ]; do
-        echo "Installing $package (attempt $attempt/$MAX_RETRIES)..."
-        if npm install -g --no-fund --no-audit --ignore-scripts "$package"; then
-            return 0
-        fi
-        if [ $attempt -lt $MAX_RETRIES ]; then
-            echo "Install failed, retrying in ${delay}s..."
-            sleep $delay
-            delay=$((delay * 2))
-        fi
-        attempt=$((attempt + 1))
-    done
-
-    echo "ERROR: Failed to install $package after $MAX_RETRIES attempts"
-    return 1
+    if [ -z "$home" ]; then
+        home=$(getent passwd "$user" 2>/dev/null | cut -d: -f6)
+    fi
+    if [ -z "$home" ]; then
+        home=$(eval echo "~$user" 2>/dev/null)
+    fi
+    if [ -z "$home" ] || [ "$home" = "~$user" ]; then
+        echo "WARNING: Could not determine home for '$user'. Using /root." >&2
+        home="/root"
+    fi
+    echo "$home"
 }
 
-# Validates Node.js and npm are installed and meet minimum version
-check_node_version() {
-    if ! command -v node &> /dev/null; then
-        echo "ERROR: Node.js is not installed."
-        echo "Please include the 'node' feature in your devcontainer.json or install Node.js in your Dockerfile."
-        exit 1
-    fi
+REMOTE_USER="$(get_target_user)"
+REMOTE_USER_HOME="$(get_target_home "$REMOTE_USER")"
 
-    if ! command -v npm &> /dev/null; then
-        echo "ERROR: npm is not installed."
-        echo "Please ensure npm is available alongside Node.js."
-        exit 1
-    fi
-
-    local current_version
-    current_version=$(node --version | sed 's/v//')
-    local current_major
-    current_major=$(echo "$current_version" | cut -d. -f1)
-
-    if ! [[ "$current_major" =~ ^[0-9]+$ ]]; then
-        echo "ERROR: Could not parse Node.js version: $current_version"
-        exit 1
-    fi
-
-    if [ "$current_major" -lt "$MIN_NODE_VERSION" ]; then
-        echo "ERROR: $FEATURE_NAME requires Node.js ${MIN_NODE_VERSION}+, but found v${current_version}."
-        echo "Please update your Dockerfile or configure the 'node' feature with version ${MIN_NODE_VERSION} or higher."
-        exit 1
-    fi
-
-    echo "Node.js v${current_version} detected (meets minimum requirement of ${MIN_NODE_VERSION}+)"
-}
-
-# Verifies CLI binary is accessible and creates symlink if needed
-verify_cli_installation() {
-    local binary_name="$1"
-    local npm_global_bin
-    npm_global_bin="$(npm prefix -g)/bin"
-
-    if command -v "$binary_name" &> /dev/null; then
-        echo "$binary_name CLI found at: $(command -v "$binary_name")"
-        return 0
-    elif [ -x "$npm_global_bin/$binary_name" ]; then
-        echo "$binary_name CLI found at: $npm_global_bin/$binary_name"
-        ln -sf "$npm_global_bin/$binary_name" "/usr/local/bin/$binary_name"
-        return 0
-    else
-        echo "ERROR: $binary_name CLI not found after install."
-        echo "DEBUG: npm prefix -g = $(npm prefix -g 2>/dev/null || echo 'failed')"
-        echo "DEBUG: Contents of $npm_global_bin:"
-        ls -la "$npm_global_bin" 2>/dev/null || echo "Directory not found"
-        return 1
-    fi
-}
-
-check_node_version
+# Ensure bin directory exists
+mkdir -p "$BIN_DIR"
 
 echo "Installing Gemini CLI..."
+echo "Target user: $REMOTE_USER"
+echo "Target home: $REMOTE_USER_HOME"
 
-validate_version "$VERSION"
+# ============================================================================
+# INSTALLATION METHOD: npm (ONLY recommended method)
+# ============================================================================
+# npm is the only recommended installation method for Gemini CLI.
+# There is no native binary installer like Claude Code.
+# Package: @google/gemini-cli
+#
+# Requirements:
+# - Node.js 18+ (preferably 20+)
+# - npm
+# ============================================================================
 
-if [ "$VERSION" = "latest" ]; then
-    npm_install_with_retry "@google/gemini-cli"
-else
-    npm_install_with_retry "@google/gemini-cli@$VERSION"
-fi
-
-if ! verify_cli_installation "gemini"; then
-    echo "ERROR: Feature \"$FEATURE_NAME\" (Unknown) failed to install! Look at the documentation at https://github.com/google-gemini/gemini-cli for help troubleshooting this error."
+if ! command -v npm &> /dev/null; then
+    echo "ERROR: npm not found."
+    echo "Gemini CLI requires npm for installation."
+    echo "Ensure Node.js is installed first."
     exit 1
 fi
 
-echo "Gemini CLI installed successfully!"
+# Check Node.js version
+NODE_VERSION=$(node -v 2>/dev/null | cut -d'.' -f1 | sed 's/v//')
+if [ -n "$NODE_VERSION" ] && [ "$NODE_VERSION" -lt 18 ]; then
+    echo "WARNING: Node.js version is below 18. Gemini CLI requires Node.js 18+."
+    echo "Current version: $(node -v)"
+fi
+
+# Install Gemini CLI via npm
+if [ "$VERSION" = "latest" ]; then
+    npm install -g @google/gemini-cli
+else
+    npm install -g @google/gemini-cli@"$VERSION"
+fi
+
+# Verify installation
+if ! command -v gemini &> /dev/null; then
+    echo "ERROR: Gemini CLI installation failed"
+    exit 1
+fi
+
+echo "Gemini CLI installed successfully"
+
+# Create settings directory for target user
+SETTINGS_DIR="${REMOTE_USER_HOME}/.gemini"
+mkdir -p "$SETTINGS_DIR"
+if ! chown -R "$REMOTE_USER:$REMOTE_USER" "$SETTINGS_DIR" 2>/dev/null; then
+    echo "NOTE: Could not change ownership of $SETTINGS_DIR to $REMOTE_USER"
+fi
+
+# Create default settings if model specified
+if [ -n "$DEFAULTMODEL" ]; then
+    cat > "${SETTINGS_DIR}/settings.json" << SETTINGSEOF
+{
+    "model": "${DEFAULTMODEL}"
+}
+SETTINGSEOF
+    chown "$REMOTE_USER:$REMOTE_USER" "${SETTINGS_DIR}/settings.json" 2>/dev/null || true
+fi
+
+# Set Vertex AI environment if enabled
+if [ "$ENABLEVERTEXAI" = "true" ]; then
+    echo 'export GOOGLE_GENAI_USE_VERTEXAI=true' >> /etc/profile.d/gemini-cli.sh
+fi
+
+# Create remote authentication helper
+cat > "${BIN_DIR}/gemini-remote-auth" << 'AUTHSCRIPT'
+#!/bin/bash
+# Helper for authenticating Gemini CLI in remote/container environments
+
+cat << 'EOF'
+================================================================================
+Gemini CLI Remote Authentication Guide
+================================================================================
+
+Gemini CLI supports multiple authentication methods:
+
+METHOD 1: API Key Authentication (Recommended for Headless/CI)
+--------------------------------------------------------------
+1. Get your API key from https://aistudio.google.com/app/apikey
+
+2. Set the environment variable:
+
+   export GOOGLE_API_KEY="your-api-key"
+   # OR
+   export GEMINI_API_KEY="your-api-key"
+
+3. Gemini CLI will automatically use the API key
+
+Note: Free tier includes 60 requests/min and 1,000 requests/day
+
+
+METHOD 2: Google OAuth (For Personal Google Accounts)
+-----------------------------------------------------
+This is tricky in headless environments. Workaround:
+
+1. Create a script to capture the auth URL:
+
+   mkdir -p ~/.gemini
+   cat > ~/capture-url.sh << 'SCRIPT'
+   #!/bin/bash
+   echo "$@" >> ~/.gemini/auth-url.txt
+   SCRIPT
+   chmod +x ~/capture-url.sh
+
+2. Set the browser to the capture script:
+
+   export BROWSER=~/capture-url.sh
+
+3. Run gemini and select Google login:
+
+   gemini
+   # Select /auth -> Login with Google
+
+4. Check the captured URL:
+
+   cat ~/.gemini/auth-url.txt
+
+5. Open this URL in your local browser and complete authentication
+
+6. After authentication, copy the callback URL and use curl:
+
+   curl "http://localhost:PORT/callback?code=..."
+
+
+METHOD 3: Service Account (For Enterprise/GCP)
+----------------------------------------------
+1. Create a service account in Google Cloud Console
+
+2. Download the JSON key file
+
+3. Set the environment variable:
+
+   export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
+
+4. Enable Vertex AI:
+
+   export GOOGLE_GENAI_USE_VERTEXAI=true
+
+
+METHOD 4: Vertex AI with ADC
+----------------------------
+If running in Google Cloud (GCE, Cloud Run, etc.):
+
+1. Ensure the instance has appropriate IAM roles
+
+2. Enable Vertex AI:
+
+   export GOOGLE_GENAI_USE_VERTEXAI=true
+
+
+================================================================================
+EOF
+AUTHSCRIPT
+
+chmod +x "${BIN_DIR}/gemini-remote-auth"
+
+# Create headless execution helper
+cat > "${BIN_DIR}/gemini-headless" << 'HEADLESSSCRIPT'
+#!/bin/bash
+# Run Gemini CLI in headless mode
+
+PROMPT="$1"
+shift
+
+if [ -z "$PROMPT" ]; then
+    echo "Usage: gemini-headless \"<prompt>\" [additional options]"
+    echo ""
+    echo "Options:"
+    echo "  --output-format json         Structured JSON output"
+    echo "  --output-format stream-json  Real-time JSON events"
+    echo ""
+    echo "Examples:"
+    echo "  gemini-headless \"Explain this code\""
+    echo "  gemini-headless \"Review for bugs\" --output-format json"
+    echo "  cat file.py | gemini-headless \"Analyze this\""
+    exit 1
+fi
+
+gemini -p "$PROMPT" "$@"
+HEADLESSSCRIPT
+
+chmod +x "${BIN_DIR}/gemini-headless"
+
+# Create JSON output helper
+cat > "${BIN_DIR}/gemini-json" << 'JSONSCRIPT'
+#!/bin/bash
+# Run Gemini with JSON output and extract response
+
+PROMPT="$1"
+shift
+
+if [ -z "$PROMPT" ]; then
+    echo "Usage: gemini-json \"<prompt>\" [additional options]"
+    echo ""
+    echo "Returns only the response text from JSON output."
+    echo "Use 'gemini-headless' for full JSON with stats."
+    exit 1
+fi
+
+if ! command -v jq &> /dev/null; then
+    echo "ERROR: jq is required for gemini-json."
+    echo "Install jq or use 'gemini-headless' instead."
+    exit 1
+fi
+
+gemini -p "$PROMPT" --output-format json "$@" | jq -r '.response'
+JSONSCRIPT
+
+chmod +x "${BIN_DIR}/gemini-json"
+
+# NOTE: gemini-json requires jq. Ensure jq is available (e.g., add common-utils or install jq directly).
+
+# Create status/info script
+cat > "${BIN_DIR}/gemini-info" << 'INFOSCRIPT'
+#!/bin/bash
+# Display Gemini CLI information and status
+
+echo "Gemini CLI Information"
+echo "======================"
+echo ""
+
+# Check authentication status
+if [ -n "$GOOGLE_API_KEY" ] || [ -n "$GEMINI_API_KEY" ]; then
+    echo "Authentication: API Key set"
+elif [ -n "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+    echo "Authentication: Service Account configured"
+    echo "  Credentials: $GOOGLE_APPLICATION_CREDENTIALS"
+elif [ -f ~/.gemini/oauth_creds.json ]; then
+    echo "Authentication: Google OAuth (credentials cached)"
+else
+    echo "Authentication: Not configured"
+fi
+
+if [ "$GOOGLE_GENAI_USE_VERTEXAI" = "true" ]; then
+    echo "Backend: Vertex AI"
+else
+    echo "Backend: Google AI Studio"
+fi
+
+# Show settings
+if [ -f ~/.gemini/settings.json ]; then
+    echo ""
+    echo "Settings (~/.gemini/settings.json):"
+    cat ~/.gemini/settings.json
+fi
+
+echo ""
+echo "Available Commands:"
+echo "  gemini              - Start interactive mode"
+echo "  gemini -p \"prompt\"  - Headless mode"
+echo "  gemini /auth        - Authenticate"
+echo "  gemini /model       - Change model"
+echo ""
+echo "Helper Scripts:"
+echo "  gemini-remote-auth  - Authentication guide"
+echo "  gemini-headless     - Simplified headless mode"
+echo "  gemini-json         - JSON output with response extraction"
+echo "  gemini-info         - This information"
+echo ""
+echo "Free Tier Limits:"
+echo "  60 requests/minute"
+echo "  1,000 requests/day"
+
+# Check for jq dependency
+if ! command -v jq &>/dev/null; then
+    echo ""
+    echo "NOTE: 'gemini-json' helper requires jq. Install with:"
+    echo "  apt-get install jq  # Debian/Ubuntu"
+    echo "  apk add jq          # Alpine"
+fi
+INFOSCRIPT
+
+chmod +x "${BIN_DIR}/gemini-info"
+
+echo ""
+echo "Gemini CLI installation complete!"
+echo ""
+echo "Run 'gemini-remote-auth' for authentication instructions."
+echo "Run 'gemini-info' for available commands and status."

@@ -1,18 +1,41 @@
 {
     "id": "gemini-cli",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "name": "Gemini CLI",
-    "documentationURL": "https://github.com/google-gemini/gemini-cli",
-    "description": "Installs Gemini CLI, Google's open-source AI agent for terminal access to Gemini models. Requires Node.js 20+.",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/gemini-cli",
+    "description": "Installs Google Gemini CLI with headless mode support for scripting and automation. Uses npm (the only supported installation method by Google).",
     "options": {
         "version": {
             "type": "string",
             "default": "latest",
-            "description": "Version of Gemini CLI to install (e.g., 'latest', '1.0.0')"
+            "description": "Gemini CLI version to install (e.g., 'latest', 'preview', or specific version)"
+        },
+        "authMethod": {
+            "type": "string",
+            "enum": [
+                "api-key",
+                "google-oauth",
+                "service-account",
+                "none"
+            ],
+            "default": "none",
+            "description": "Preferred authentication method. 'api-key' uses GOOGLE_API_KEY/GEMINI_API_KEY"
+        },
+        "defaultModel": {
+            "type": "string",
+            "default": "",
+            "description": "Default model to use (e.g., 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-3-pro')"
+        },
+        "enableVertexAI": {
+            "type": "boolean",
+            "default": false,
+            "description": "Use Vertex AI instead of Google AI Studio (requires GCP project)"
         }
     },
+    "containerEnv": {
+        "GEMINI_DEFAULT_MODEL": "${defaultModel}"
+    },
     "installsAfter": [
-        "./node",
-        "ghcr.io/ctrlcarlitos/devcontainer-features/node"
+        "ghcr.io/devcontainers/features/node"
     ]
 }
