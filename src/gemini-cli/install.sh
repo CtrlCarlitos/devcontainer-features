@@ -85,8 +85,33 @@ else
     npm install -g @google/gemini-cli@"$VERSION"
 fi
 
+verify_gemini_installation() {
+    local npm_global_bin
+    npm_global_bin="$(npm prefix -g)/bin"
+
+    if command -v gemini &> /dev/null; then
+        return 0
+    fi
+
+    if [ -x "${npm_global_bin}/gemini" ]; then
+        ln -sf "${npm_global_bin}/gemini" "${BIN_DIR}/gemini"
+        return 0
+    fi
+
+    if [ -x "/usr/local/share/nvm/current/bin/gemini" ]; then
+        ln -sf "/usr/local/share/nvm/current/bin/gemini" "${BIN_DIR}/gemini"
+        return 0
+    fi
+
+    echo "ERROR: gemini CLI not found after npm install."
+    echo "DEBUG: npm prefix -g = $(npm prefix -g 2>/dev/null || echo 'failed')"
+    echo "DEBUG: Contents of ${npm_global_bin}:"
+    ls -la "${npm_global_bin}" 2>/dev/null || echo "Directory not found"
+    return 1
+}
+
 # Verify installation
-if ! command -v gemini &> /dev/null; then
+if ! verify_gemini_installation; then
     echo "ERROR: Gemini CLI installation failed"
     exit 1
 fi
