@@ -1,114 +1,405 @@
 #!/bin/bash
-set -euo pipefail
+set -e
 
+# Feature options
 VERSION="${VERSION:-latest}"
-MIN_NODE_VERSION=22
-FEATURE_NAME="Codex"
-MAX_RETRIES=3
+INSTALLMETHOD="${INSTALLMETHOD:-npm}"
+ENABLEMCPSERVER="${ENABLEMCPSERVER:-false}"
+AUTHMETHOD="${AUTHMETHOD:-none}"
+OAUTHPORT="${OAUTHPORT:-1455}"
+APPROVALMODE="${APPROVALMODE:-suggest}"
+SANDBOXMODE="${SANDBOXMODE:-workspace-write}"
 
-# Validates version string format
-validate_version() {
-    local version="$1"
-    if [[ ! "$version" =~ ^(latest|stable|alpha|lts|[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?|[0-9]+\.[0-9]+|[0-9]+)$ ]]; then
-        echo "ERROR: Invalid version format: $version"
-        echo "Use 'latest', 'stable', 'alpha', 'lts', or a semver version (e.g., '1.2.3')"
-        exit 1
-    fi
-}
+# Fixed install location (helper scripts use static paths)
+BIN_DIR="/usr/local/bin"
 
-# Retries npm install with exponential backoff
-npm_install_with_retry() {
-    local package="$1"
-    local attempt=1
-    local delay=5
+# ============================================================================
+# Cleanup and Error Handling
+# ============================================================================
+CLEANUP_FILES=()
+CLEANUP_DIRS=()
 
-    while [ $attempt -le $MAX_RETRIES ]; do
-        echo "Installing $package (attempt $attempt/$MAX_RETRIES)..."
-        if npm install -g --no-fund --no-audit --ignore-scripts "$package"; then
-            return 0
-        fi
-        if [ $attempt -lt $MAX_RETRIES ]; then
-            echo "Install failed, retrying in ${delay}s..."
-            sleep $delay
-            delay=$((delay * 2))
-        fi
-        attempt=$((attempt + 1))
+cleanup() {
+    local exit_code=$?
+    for f in "${CLEANUP_FILES[@]}"; do
+        rm -f "$f" 2>/dev/null || true
     done
-
-    echo "ERROR: Failed to install $package after $MAX_RETRIES attempts"
-    return 1
+    for d in "${CLEANUP_DIRS[@]}"; do
+        rm -rf "$d" 2>/dev/null || true
+    done
+    exit $exit_code
 }
 
-# Validates Node.js and npm are installed and meet minimum version
-check_node_version() {
-    if ! command -v node &> /dev/null; then
-        echo "ERROR: Node.js is not installed."
-        echo "Please include the 'node' feature in your devcontainer.json or install Node.js in your Dockerfile."
-        exit 1
+trap cleanup EXIT
+
+# ============================================================================
+# Robust User Detection
+# ============================================================================
+get_target_user() {
+    local user="${_REMOTE_USER:-}"
+    [ -z "$user" ] && user="${SUDO_USER:-}"
+    [ -z "$user" ] && user="$(whoami)"
+
+    if ! id "$user" &>/dev/null; then
+        echo "WARNING: Target user '$user' does not exist. Using 'root'." >&2
+        user="root"
     fi
+    echo "$user"
+}
+
+get_target_home() {
+    local user="$1"
+    local home="${_REMOTE_USER_HOME:-}"
+
+    if [ -z "$home" ]; then
+        home=$(getent passwd "$user" 2>/dev/null | cut -d: -f6)
+    fi
+    if [ -z "$home" ]; then
+        home=$(eval echo "~$user" 2>/dev/null)
+    fi
+    if [ -z "$home" ] || [ "$home" = "~$user" ]; then
+        echo "WARNING: Could not determine home for '$user'. Using /root." >&2
+        home="/root"
+    fi
+    echo "$home"
+}
+
+REMOTE_USER="$(get_target_user)"
+REMOTE_USER_HOME="$(get_target_home "$REMOTE_USER")"
+
+# Ensure bin directory exists
+mkdir -p "$BIN_DIR"
+
+echo "Installing OpenAI Codex CLI..."
+echo "Target user: $REMOTE_USER"
+echo "Target home: $REMOTE_USER_HOME"
+echo "Install method: $INSTALLMETHOD"
+
+# ============================================================================
+# INSTALLATION METHOD: npm (RECOMMENDED by OpenAI)
+# ============================================================================
+# npm is the primary installation method recommended by OpenAI.
+# Package: @openai/codex
+# ============================================================================
+
+install_npm() {
+    echo "Using npm installer (recommended by OpenAI)..."
 
     if ! command -v npm &> /dev/null; then
-        echo "ERROR: npm is not installed."
-        echo "Please ensure npm is available alongside Node.js."
+        echo "ERROR: npm not found. Install Node.js first."
         exit 1
     fi
 
-    local current_version
-    current_version=$(node --version | sed 's/v//')
-    local current_major
-    current_major=$(echo "$current_version" | cut -d. -f1)
-
-    if ! [[ "$current_major" =~ ^[0-9]+$ ]]; then
-        echo "ERROR: Could not parse Node.js version: $current_version"
-        exit 1
-    fi
-
-    if [ "$current_major" -lt "$MIN_NODE_VERSION" ]; then
-        echo "ERROR: $FEATURE_NAME requires Node.js ${MIN_NODE_VERSION}+, but found v${current_version}."
-        echo "Please update your Dockerfile or configure the 'node' feature with version ${MIN_NODE_VERSION} or higher."
-        exit 1
-    fi
-
-    echo "Node.js v${current_version} detected (meets minimum requirement of ${MIN_NODE_VERSION}+)"
-}
-
-# Verifies CLI binary is accessible and creates symlink if needed
-verify_cli_installation() {
-    local binary_name="$1"
-    local npm_global_bin
-    npm_global_bin="$(npm prefix -g)/bin"
-
-    if command -v "$binary_name" &> /dev/null; then
-        echo "$binary_name CLI found at: $(command -v "$binary_name")"
-        return 0
-    elif [ -x "$npm_global_bin/$binary_name" ]; then
-        echo "$binary_name CLI found at: $npm_global_bin/$binary_name"
-        ln -sf "$npm_global_bin/$binary_name" "/usr/local/bin/$binary_name"
-        return 0
+    if [ "$VERSION" = "latest" ]; then
+        npm install -g @openai/codex
     else
-        echo "ERROR: $binary_name CLI not found after install."
-        echo "DEBUG: npm prefix -g = $(npm prefix -g 2>/dev/null || echo 'failed')"
-        echo "DEBUG: Contents of $npm_global_bin:"
-        ls -la "$npm_global_bin" 2>/dev/null || echo "Directory not found"
-        return 1
+        npm install -g @openai/codex@"$VERSION"
     fi
 }
 
-check_node_version
+# ============================================================================
+# INSTALLATION METHOD: Binary (GitHub Releases)
+# ============================================================================
+# Alternative method downloading prebuilt binary from GitHub releases.
+# ============================================================================
 
-echo "Installing Codex..."
+install_binary() {
+    echo "Using binary installer from GitHub releases..."
 
-validate_version "$VERSION"
+    if ! command -v curl &> /dev/null; then
+        echo "ERROR: curl not found. Install curl or use installMethod: npm"
+        exit 1
+    fi
 
-if [ "$VERSION" = "latest" ]; then
-    npm_install_with_retry "@openai/codex"
-else
-    npm_install_with_retry "@openai/codex@$VERSION"
-fi
+    if ! command -v tar &> /dev/null; then
+        echo "ERROR: tar not found. Install tar or use installMethod: npm"
+        exit 1
+    fi
 
-if ! verify_cli_installation "codex"; then
-    echo "ERROR: Feature \"$FEATURE_NAME\" (Unknown) failed to install! Look at the documentation at https://github.com/openai/codex for help troubleshooting this error."
+    # Detect architecture
+    ARCH=$(uname -m)
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+    case "$ARCH" in
+        x86_64)
+            ARCH_STR="x86_64"
+            ;;
+        aarch64|arm64)
+            ARCH_STR="aarch64"
+            ;;
+        *)
+            echo "ERROR: Unsupported architecture: $ARCH"
+            exit 1
+            ;;
+    esac
+
+    case "$OS" in
+        linux)
+            BINARY_NAME="codex-${ARCH_STR}-unknown-linux-musl"
+            ;;
+        darwin)
+            BINARY_NAME="codex-${ARCH_STR}-apple-darwin"
+            ;;
+        *)
+            echo "ERROR: Unsupported OS: $OS"
+            exit 1
+            ;;
+    esac
+
+    # Get latest release URL or specific version
+    if [ "$VERSION" = "latest" ]; then
+        RELEASE_URL="https://github.com/openai/codex/releases/latest/download/${BINARY_NAME}.tar.gz"
+    else
+        RELEASE_URL="https://github.com/openai/codex/releases/download/${VERSION}/${BINARY_NAME}.tar.gz"
+    fi
+
+    # Create temp directory and register for cleanup
+    local TEMP_DIR="/tmp/codex-install-$$"
+    mkdir -p "$TEMP_DIR"
+    CLEANUP_DIRS+=("$TEMP_DIR")
+
+    echo "Downloading from: $RELEASE_URL"
+
+    if ! curl -fsSL "$RELEASE_URL" -o "${TEMP_DIR}/codex.tar.gz"; then
+        echo "ERROR: Failed to download Codex binary"
+        exit 1
+    fi
+
+    # Extract and find the binary (handle different archive structures)
+    tar -xzf "${TEMP_DIR}/codex.tar.gz" -C "$TEMP_DIR"
+
+    local CODEX_BIN=""
+    for candidate in "${TEMP_DIR}/codex" "${TEMP_DIR}/${BINARY_NAME}" "${TEMP_DIR}"/*/codex; do
+        if [ -f "$candidate" ]; then
+            CODEX_BIN="$candidate"
+            break
+        fi
+    done
+
+    # If not found, search recursively
+    if [ -z "$CODEX_BIN" ]; then
+        CODEX_BIN=$(find "$TEMP_DIR" -name "codex" -type f | head -1)
+    fi
+
+    if [ -z "$CODEX_BIN" ] || [ ! -f "$CODEX_BIN" ]; then
+        echo "ERROR: Could not find codex binary in archive"
+        echo "Archive contents:"
+        ls -la "$TEMP_DIR"
+        exit 1
+    fi
+
+    chmod +x "$CODEX_BIN"
+    mv "$CODEX_BIN" "${BIN_DIR}/codex"
+    echo "Installed codex to ${BIN_DIR}/codex"
+}
+
+# ============================================================================
+# Main Installation Logic
+# ============================================================================
+
+case "$INSTALLMETHOD" in
+    npm)
+        install_npm
+        ;;
+    binary)
+        install_binary
+        ;;
+    *)
+        echo "Unknown install method: $INSTALLMETHOD"
+        echo "Valid options: npm (recommended), binary"
+        exit 1
+        ;;
+ esac
+
+# Verify installation
+if ! command -v codex &> /dev/null; then
+    echo "ERROR: Codex installation failed"
     exit 1
 fi
 
-echo "Codex installed successfully!"
+echo "Codex installed successfully: $(codex --version)"
+
+# Create default config directory for target user
+CONFIG_DIR="${REMOTE_USER_HOME}/.codex"
+mkdir -p "$CONFIG_DIR"
+if ! chown -R "$REMOTE_USER:$REMOTE_USER" "$CONFIG_DIR" 2>/dev/null; then
+    echo "NOTE: Could not change ownership of $CONFIG_DIR to $REMOTE_USER"
+    echo "This is expected if running in rootless mode."
+fi
+
+# Create default config file with user preferences
+cat > "${CONFIG_DIR}/config.toml" << CONFIGEOF
+# Codex CLI Configuration
+# Generated by devcontainer feature
+
+# Default approval mode: suggest, auto, or full-auto
+approval_policy = "${APPROVALMODE}"
+
+# Sandbox mode: workspace-write, full-access, or read-only
+sandbox_mode = "${SANDBOXMODE}"
+
+# Uncomment to prefer API key over ChatGPT auth
+# preferred_auth_method = "apikey"
+
+# Network access in sandbox mode
+[sandbox_workspace_write]
+network_access = false
+CONFIGEOF
+
+# Ensure correct ownership
+chown "$REMOTE_USER:$REMOTE_USER" "${CONFIG_DIR}/config.toml" 2>/dev/null || true
+
+# Create remote authentication helper
+cat > "${BIN_DIR}/codex-remote-auth" << 'AUTHSCRIPT'
+#!/bin/bash
+# Helper for authenticating Codex in remote/container environments
+
+OAUTH_PORT="${CODEX_OAUTH_PORT:-1455}"
+
+cat << EOF
+================================================================================
+OpenAI Codex Remote Authentication Guide
+================================================================================
+
+Codex supports multiple authentication methods:
+
+METHOD 1: API Key Authentication (Recommended for Headless/CI)
+--------------------------------------------------------------
+1. Get your API key from https://platform.openai.com/api-keys
+
+2. Set the environment variable:
+
+   export OPENAI_API_KEY="sk-..."
+
+3. Codex will automatically use the API key
+
+4. To make it permanent, add to your shell config or use:
+
+   echo 'export OPENAI_API_KEY="sk-..."' >> ~/.bashrc
+
+
+METHOD 2: SSH Port Forwarding (For ChatGPT OAuth)
+-------------------------------------------------
+1. From your LOCAL machine, connect with port forwarding:
+
+   ssh -L ${OAUTH_PORT}:localhost:${OAUTH_PORT} user@<container-host>
+
+2. In this container, run:
+
+   codex
+
+3. Select "Sign in with ChatGPT" and open the localhost URL in your LOCAL browser
+
+
+METHOD 3: Device Code Authentication (Experimental)
+---------------------------------------------------
+1. Run:
+
+   codex login --device-code
+
+2. Follow the instructions to enter the code at the provided URL
+
+
+METHOD 4: Copy Existing Credentials
+------------------------------------
+If authenticated elsewhere, copy ~/.codex/auth.json to this container
+
+
+Current OAuth Port: ${OAUTH_PORT}
+================================================================================
+EOF
+AUTHSCRIPT
+
+chmod +x "${BIN_DIR}/codex-remote-auth"
+
+# Create non-interactive execution helper
+cat > "${BIN_DIR}/codex-exec" << 'EXECSCRIPT'
+#!/bin/bash
+# Run Codex in non-interactive mode
+
+PROMPT="$1"
+shift
+
+if [ -z "$PROMPT" ]; then
+    echo "Usage: codex-exec \"<prompt>\" [additional options]"
+    echo ""
+    echo "Examples:"
+    echo "  codex-exec \"Run the test suite\""
+    echo "  codex-exec \"Fix linting errors\" --full-auto"
+    echo "  codex-exec \"Review code\" --approval-mode suggest"
+    exit 1
+fi
+
+codex exec "$PROMPT" "$@"
+EXECSCRIPT
+
+chmod +x "${BIN_DIR}/codex-exec"
+
+# Create MCP server helper
+cat > "${BIN_DIR}/codex-mcp-server" << 'MCPSCRIPT'
+#!/bin/bash
+# Run Codex as an MCP server for other agents
+
+echo "Starting Codex as MCP server..."
+echo "Other MCP clients can now connect and use Codex's capabilities."
+echo ""
+echo "Press Ctrl+C to stop the server."
+echo ""
+
+codex mcp serve
+MCPSCRIPT
+
+chmod +x "${BIN_DIR}/codex-mcp-server"
+
+# Create status/info script
+cat > "${BIN_DIR}/codex-info" << 'INFOSCRIPT'
+#!/bin/bash
+# Display Codex information and status
+
+echo "OpenAI Codex CLI Information"
+echo "============================"
+echo ""
+echo "Version: $(codex --version 2>/dev/null || echo 'Unknown')"
+echo ""
+
+# Check authentication
+if [ -f ~/.codex/auth.json ]; then
+    echo "Authentication: Credentials file found"
+else
+    echo "Authentication: Not authenticated"
+fi
+
+if [ -n "$OPENAI_API_KEY" ]; then
+    echo "API Key: Set (${#OPENAI_API_KEY} characters)"
+else
+    echo "API Key: Not set"
+fi
+
+# Show config
+if [ -f ~/.codex/config.toml ]; then
+    echo ""
+    echo "Configuration (~/.codex/config.toml):"
+    grep -E "^[^#]" ~/.codex/config.toml 2>/dev/null | head -10
+fi
+
+echo ""
+echo "Available Commands:"
+echo "  codex              - Start interactive TUI"
+echo "  codex exec         - Non-interactive execution"
+echo "  codex mcp serve    - Run as MCP server"
+echo "  codex login        - Authenticate"
+echo ""
+echo "Helper Scripts:"
+echo "  codex-remote-auth  - Authentication guide"
+echo "  codex-exec         - Simplified non-interactive mode"
+echo "  codex-mcp-server   - Start as MCP server"
+echo "  codex-info         - This information"
+INFOSCRIPT
+
+chmod +x "${BIN_DIR}/codex-info"
+
+echo ""
+echo "Codex installation complete!"
+echo ""
+echo "Run 'codex-remote-auth' for authentication instructions."
+echo "Run 'codex-info' for available commands and status."
