@@ -97,6 +97,31 @@ install_npm() {
     fi
 }
 
+verify_codex_installation() {
+    local npm_global_bin
+    npm_global_bin="$(npm prefix -g)/bin"
+
+    if command -v codex &> /dev/null; then
+        return 0
+    fi
+
+    if [ -x "${npm_global_bin}/codex" ]; then
+        ln -sf "${npm_global_bin}/codex" "${BIN_DIR}/codex"
+        return 0
+    fi
+
+    if [ -x "/usr/local/share/nvm/current/bin/codex" ]; then
+        ln -sf "/usr/local/share/nvm/current/bin/codex" "${BIN_DIR}/codex"
+        return 0
+    fi
+
+    echo "ERROR: codex CLI not found after npm install."
+    echo "DEBUG: npm prefix -g = $(npm prefix -g 2>/dev/null || echo 'failed')"
+    echo "DEBUG: Contents of ${npm_global_bin}:"
+    ls -la "${npm_global_bin}" 2>/dev/null || echo "Directory not found"
+    return 1
+}
+
 # ============================================================================
 # INSTALLATION METHOD: Binary (GitHub Releases)
 # ============================================================================
@@ -200,6 +225,9 @@ install_binary() {
 case "$INSTALLMETHOD" in
     npm)
         install_npm
+        if ! verify_codex_installation; then
+            exit 1
+        fi
         ;;
     binary)
         install_binary
