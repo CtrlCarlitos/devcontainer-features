@@ -164,17 +164,37 @@ fi
 
 echo "OpenCode installed successfully: $(opencode --version)"
 
+# Persist feature option defaults for runtime scripts
+DEFAULTS_DIR="/usr/local/etc"
+DEFAULTS_FILE="${DEFAULTS_DIR}/opencode-defaults"
+mkdir -p "$DEFAULTS_DIR"
+{
+    printf 'OPENCODE_ENABLE_SERVER_DEFAULT=%q\n' "$ENABLESERVER"
+    printf 'OPENCODE_SERVER_PORT_DEFAULT=%q\n' "$SERVERPORT"
+    printf 'OPENCODE_SERVER_HOSTNAME_DEFAULT=%q\n' "$SERVERHOSTNAME"
+    printf 'OPENCODE_ENABLE_MDNS_DEFAULT=%q\n' "$ENABLEMDNS"
+    printf 'OPENCODE_ENABLE_WEB_DEFAULT=%q\n' "$ENABLEWEBMODE"
+    printf 'OPENCODE_CORS_ORIGINS_DEFAULT=%q\n' "$CORSORIGINS"
+} > "$DEFAULTS_FILE"
+chmod 644 "$DEFAULTS_FILE"
+
 # Create the server startup script
 cat > "${BIN_DIR}/opencode-server-start.sh" << 'SERVERSCRIPT'
 #!/bin/bash
 
-# Configuration from environment (set by devcontainer-feature.json containerEnv)
-ENABLE_SERVER="${OPENCODE_ENABLE_SERVER:-false}"
-PORT="${OPENCODE_SERVER_PORT:-4096}"
-HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-0.0.0.0}"
-ENABLE_MDNS="${OPENCODE_ENABLE_MDNS:-false}"
-ENABLE_WEB="${OPENCODE_ENABLE_WEB:-false}"
-CORS_ORIGINS="${OPENCODE_CORS_ORIGINS:-}"
+# Configuration from environment or feature defaults
+DEFAULTS_FILE="/usr/local/etc/opencode-defaults"
+if [ -f "$DEFAULTS_FILE" ]; then
+    # shellcheck source=/usr/local/etc/opencode-defaults
+    . "$DEFAULTS_FILE"
+fi
+
+ENABLE_SERVER="${OPENCODE_ENABLE_SERVER:-${OPENCODE_ENABLE_SERVER_DEFAULT:-false}}"
+PORT="${OPENCODE_SERVER_PORT:-${OPENCODE_SERVER_PORT_DEFAULT:-4096}}"
+HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-0.0.0.0}}"
+ENABLE_MDNS="${OPENCODE_ENABLE_MDNS:-${OPENCODE_ENABLE_MDNS_DEFAULT:-false}}"
+ENABLE_WEB="${OPENCODE_ENABLE_WEB:-${OPENCODE_ENABLE_WEB_DEFAULT:-false}}"
+CORS_ORIGINS="${OPENCODE_CORS_ORIGINS:-${OPENCODE_CORS_ORIGINS_DEFAULT:-}}"
 
 # Only start if server mode is enabled
 if [ "$ENABLE_SERVER" != "true" ]; then
@@ -379,8 +399,15 @@ _get_pid_dir() {
 PID_DIR="$(_get_pid_dir)"
 PID_FILE="${PID_DIR}/opencode-server.pid"
 LOG_FILE="${PID_DIR}/opencode-server.log"
-PORT="${OPENCODE_SERVER_PORT:-4096}"
-HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-0.0.0.0}"
+
+DEFAULTS_FILE="/usr/local/etc/opencode-defaults"
+if [ -f "$DEFAULTS_FILE" ]; then
+    # shellcheck source=/usr/local/etc/opencode-defaults
+    . "$DEFAULTS_FILE"
+fi
+
+PORT="${OPENCODE_SERVER_PORT:-${OPENCODE_SERVER_PORT_DEFAULT:-4096}}"
+HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-0.0.0.0}}"
 
 # Use localhost for health checks even if bound to 0.0.0.0
 HEALTH_HOST="127.0.0.1"

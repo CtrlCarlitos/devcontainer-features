@@ -224,12 +224,27 @@ if [ "$SKIPPERMISSIONS" = "true" ]; then
     fi
 fi
 
+# Persist feature option defaults for runtime scripts
+DEFAULTS_DIR="/usr/local/etc"
+DEFAULTS_FILE="${DEFAULTS_DIR}/claude-code-defaults"
+mkdir -p "$DEFAULTS_DIR"
+{
+    printf 'CLAUDE_CODE_OAUTH_PORT_DEFAULT=%q\n' "$OAUTHPORT"
+} > "$DEFAULTS_FILE"
+chmod 644 "$DEFAULTS_FILE"
+
 # Create helper script for remote authentication
 cat > "${BIN_DIR}/claude-remote-auth" << 'AUTHSCRIPT'
 #!/bin/bash
 # Helper script for authenticating Claude Code in remote/container environments
 
-OAUTH_PORT="${CLAUDE_CODE_OAUTH_PORT:-52780}"
+DEFAULTS_FILE="/usr/local/etc/claude-code-defaults"
+if [ -f "$DEFAULTS_FILE" ]; then
+    # shellcheck source=/usr/local/etc/claude-code-defaults
+    . "$DEFAULTS_FILE"
+fi
+
+OAUTH_PORT="${CLAUDE_CODE_OAUTH_PORT:-${CLAUDE_CODE_OAUTH_PORT_DEFAULT:-52780}}"
 
 cat << EOF
 ================================================================================

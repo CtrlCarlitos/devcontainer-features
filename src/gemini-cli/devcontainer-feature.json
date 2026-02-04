@@ -32,10 +32,9 @@
             "description": "Use Vertex AI instead of Google AI Studio (requires GCP project)"
         }
     },
-    "containerEnv": {
-        "GEMINI_DEFAULT_MODEL": "${defaultModel}"
-    },
     "installsAfter": [
+        "./node",
+        "ghcr.io/ctrlcarlitos/devcontainer-features/node",
         "ghcr.io/devcontainers/features/node"
     ]
 }
