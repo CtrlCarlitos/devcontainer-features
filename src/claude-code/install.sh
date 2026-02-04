@@ -90,6 +90,12 @@ install_native() {
         exit 1
     fi
 
+    if [ "$REMOTE_USER" != "root" ] && [ "$(whoami)" = "root" ]; then
+        mkdir -p "${REMOTE_USER_HOME}/.local/state" "${REMOTE_USER_HOME}/.local/bin"
+        chown "$REMOTE_USER:$REMOTE_USER" "$REMOTE_USER_HOME" 2>/dev/null || true
+        chown -R "$REMOTE_USER:$REMOTE_USER" "${REMOTE_USER_HOME}/.local" 2>/dev/null || true
+    fi
+
     # Download installer to temporary file (more secure than curl | bash)
     local INSTALLER="/tmp/claude-install-$$.sh"
     CLEANUP_FILES+=("$INSTALLER")
