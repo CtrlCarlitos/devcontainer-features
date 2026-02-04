@@ -45,9 +45,6 @@
             "description": "Run initial setup with --dangerously-skip-permissions for headless environments"
         }
     },
-    "containerEnv": {
-        "CLAUDE_CODE_OAUTH_PORT": "${oauthPort}"
-    },
     "customizations": {
         "vscode": {
             "settings": {
@@ -61,6 +58,8 @@
         }
     },
     "installsAfter": [
+        "./node",
+        "ghcr.io/ctrlcarlitos/devcontainer-features/node",
         "ghcr.io/devcontainers/features/common-utils"
     ]
 }

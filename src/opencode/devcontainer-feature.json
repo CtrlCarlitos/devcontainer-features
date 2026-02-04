@@ -50,14 +50,6 @@
             "description": "Comma-separated list of additional CORS origins (e.g., 'http://localhost:3000,https://app.example.com')"
         }
     },
-    "containerEnv": {
-        "OPENCODE_ENABLE_SERVER": "${enableServer}",
-        "OPENCODE_SERVER_PORT": "${serverPort}",
-        "OPENCODE_SERVER_HOSTNAME": "${serverHostname}",
-        "OPENCODE_ENABLE_MDNS": "${enableMdns}",
-        "OPENCODE_ENABLE_WEB": "${enableWebMode}",
-        "OPENCODE_CORS_ORIGINS": "${corsOrigins}"
-    },
     "customizations": {
         "vscode": {
             "settings": {
@@ -73,6 +65,8 @@
     },
     "postStartCommand": "/usr/local/bin/opencode-server-start.sh",
     "installsAfter": [
+        "./node",
+        "ghcr.io/ctrlcarlitos/devcontainer-features/node",
         "ghcr.io/devcontainers/features/common-utils"
     ]
 }

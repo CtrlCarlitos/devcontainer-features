@@ -249,12 +249,27 @@ CONFIGEOF
 # Ensure correct ownership
 chown "$REMOTE_USER:$REMOTE_USER" "${CONFIG_DIR}/config.toml" 2>/dev/null || true
 
+# Persist feature option defaults for runtime scripts
+DEFAULTS_DIR="/usr/local/etc"
+DEFAULTS_FILE="${DEFAULTS_DIR}/codex-defaults"
+mkdir -p "$DEFAULTS_DIR"
+{
+    printf 'CODEX_OAUTH_PORT_DEFAULT=%q\n' "$OAUTHPORT"
+} > "$DEFAULTS_FILE"
+chmod 644 "$DEFAULTS_FILE"
+
 # Create remote authentication helper
 cat > "${BIN_DIR}/codex-remote-auth" << 'AUTHSCRIPT'
 #!/bin/bash
 # Helper for authenticating Codex in remote/container environments
 
-OAUTH_PORT="${CODEX_OAUTH_PORT:-1455}"
+DEFAULTS_FILE="/usr/local/etc/codex-defaults"
+if [ -f "$DEFAULTS_FILE" ]; then
+    # shellcheck source=/usr/local/etc/codex-defaults
+    . "$DEFAULTS_FILE"
+fi
+
+OAUTH_PORT="${CODEX_OAUTH_PORT:-${CODEX_OAUTH_PORT_DEFAULT:-1455}}"
 
 cat << EOF
 ================================================================================
