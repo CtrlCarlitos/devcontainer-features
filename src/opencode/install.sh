@@ -107,12 +107,12 @@ install_native() {
     export OPENCODE_INSTALL_DIR="$BIN_DIR"
 
     if [ "$VERSION" = "latest" ]; then
-        bash "$INSTALLER"
+        env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
     else
         # Note: Version pinning support varies by installer
-        if ! bash "$INSTALLER" "$VERSION" 2>/dev/null; then
+        if ! env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" "$VERSION" 2>/dev/null; then
             echo "NOTE: Installer may not support version pinning. Installing latest."
-            bash "$INSTALLER"
+            env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
         fi
     fi
 }
