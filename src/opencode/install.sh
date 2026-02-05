@@ -103,17 +103,33 @@ install_native() {
 
     chmod +x "$INSTALLER"
 
-    # Install to /usr/local/bin for system-wide access
-    export OPENCODE_INSTALL_DIR="$BIN_DIR"
-    export XDG_BIN_DIR="$BIN_DIR"
+    if [ "$REMOTE_USER" != "root" ] && [ "$(whoami)" = "root" ]; then
+        # Install as target user so the installer doesn't land in /root
+        mkdir -p "${REMOTE_USER_HOME}/.local/bin" "${REMOTE_USER_HOME}/.local/state"
+        chown -R "$REMOTE_USER:$REMOTE_USER" "${REMOTE_USER_HOME}/.local" 2>/dev/null || true
 
-    if [ "$VERSION" = "latest" ]; then
-        env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
+        if [ "$VERSION" = "latest" ]; then
+            su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\""
+        else
+            # Note: Version pinning support varies by installer
+            if ! su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\" \"$VERSION\"" 2>/dev/null; then
+                echo "NOTE: Installer may not support version pinning. Installing latest."
+                su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\""
+            fi
+        fi
     else
-        # Note: Version pinning support varies by installer
-        if ! env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" "$VERSION" 2>/dev/null; then
-            echo "NOTE: Installer may not support version pinning. Installing latest."
+        # Install to /usr/local/bin for system-wide access
+        export OPENCODE_INSTALL_DIR="$BIN_DIR"
+        export XDG_BIN_DIR="$BIN_DIR"
+
+        if [ "$VERSION" = "latest" ]; then
             env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
+        else
+            # Note: Version pinning support varies by installer
+            if ! env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" "$VERSION" 2>/dev/null; then
+                echo "NOTE: Installer may not support version pinning. Installing latest."
+                env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
+            fi
         fi
     fi
 }
@@ -135,8 +151,10 @@ verify_opencode_installation() {
         "${npm_global_bin}/opencode"
         "${REMOTE_USER_HOME}/.local/bin/opencode"
         "${REMOTE_USER_HOME}/.opencode/bin/opencode"
+        "${REMOTE_USER_HOME}/.local/share/opencode/bin/opencode"
         "/root/.local/bin/opencode"
         "/root/.opencode/bin/opencode"
+        "/root/.local/share/opencode/bin/opencode"
     )
 
     for candidate in "${candidates[@]}"; do
@@ -146,6 +164,16 @@ verify_opencode_installation() {
             return 0
         fi
     done
+
+    if command -v find &> /dev/null; then
+        local found
+        found=$(find "$REMOTE_USER_HOME" /root -maxdepth 4 -type f -name opencode -perm -u+x 2>/dev/null | head -1)
+        if [ -n "$found" ]; then
+            ln -sf "$found" "${BIN_DIR}/opencode"
+            export PATH="${BIN_DIR}:$PATH"
+            return 0
+        fi
+    fi
 
     echo "ERROR: opencode CLI not found after install."
     if [ -n "$npm_global_bin" ]; then
