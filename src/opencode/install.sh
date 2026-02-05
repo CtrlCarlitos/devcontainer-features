@@ -52,11 +52,18 @@ get_target_home() {
     local user="$1"
     local home="${_REMOTE_USER_HOME:-}"
 
-    if [ -z "$home" ]; then
+    if [ -z "$home" ] && command -v getent &>/dev/null; then
         home=$(getent passwd "$user" 2>/dev/null | cut -d: -f6)
     fi
+    if [ -z "$home" ] && [ -r /etc/passwd ]; then
+        home=$(awk -F: -v u="$user" '$1==u{print $6}' /etc/passwd)
+    fi
     if [ -z "$home" ]; then
-        home=$(eval echo "~$user" 2>/dev/null)
+        if [ "$user" = "root" ]; then
+            home="/root"
+        else
+            home="/home/$user"
+        fi
     fi
     if [ -z "$home" ] || [ "$home" = "~$user" ]; then
         echo "WARNING: Could not determine home for '$user'. Using /root." >&2
@@ -67,6 +74,25 @@ get_target_home() {
 
 REMOTE_USER="$(get_target_user)"
 REMOTE_USER_HOME="$(get_target_home "$REMOTE_USER")"
+
+# ============================================================================
+# Input Validation
+# ============================================================================
+validate_port() {
+    local value="$1"
+    local fallback="$2"
+    local label="$3"
+
+    if [[ "$value" =~ ^[0-9]+$ ]] && [ "$value" -ge 1 ] && [ "$value" -le 65535 ]; then
+        echo "$value"
+        return 0
+    fi
+
+    echo "WARNING: Invalid ${label} port '$value'. Using ${fallback}." >&2
+    echo "$fallback"
+}
+
+SERVERPORT="$(validate_port "$SERVERPORT" "4096" "server")"
 
 # Ensure bin directory exists
 mkdir -p "$BIN_DIR"
@@ -152,10 +178,15 @@ verify_opencode_installation() {
         "${REMOTE_USER_HOME}/.local/bin/opencode"
         "${REMOTE_USER_HOME}/.opencode/bin/opencode"
         "${REMOTE_USER_HOME}/.local/share/opencode/bin/opencode"
-        "/root/.local/bin/opencode"
-        "/root/.opencode/bin/opencode"
-        "/root/.local/share/opencode/bin/opencode"
     )
+
+    if [ "$REMOTE_USER" = "root" ]; then
+        candidates+=(
+            "/root/.local/bin/opencode"
+            "/root/.opencode/bin/opencode"
+            "/root/.local/share/opencode/bin/opencode"
+        )
+    fi
 
     for candidate in "${candidates[@]}"; do
         if [ -n "$candidate" ] && [ -x "$candidate" ]; then
@@ -167,7 +198,11 @@ verify_opencode_installation() {
 
     if command -v find &> /dev/null; then
         local found
-        found=$(find "$REMOTE_USER_HOME" /root -maxdepth 4 -type f -name opencode -perm -u+x 2>/dev/null | head -1)
+        if [ "$REMOTE_USER" = "root" ]; then
+            found=$(find "$REMOTE_USER_HOME" /root -maxdepth 4 -type f -name opencode -perm -u+x 2>/dev/null | head -1)
+        else
+            found=$(find "$REMOTE_USER_HOME" -maxdepth 4 -type f -name opencode -perm -u+x 2>/dev/null | head -1)
+        fi
         if [ -n "$found" ]; then
             ln -sf "$found" "${BIN_DIR}/opencode"
             export PATH="${BIN_DIR}:$PATH"
@@ -243,7 +278,9 @@ mkdir -p "$DEFAULTS_DIR"
     printf 'OPENCODE_ENABLE_WEB_DEFAULT=%q\n' "$ENABLEWEBMODE"
     printf 'OPENCODE_CORS_ORIGINS_DEFAULT=%q\n' "$CORSORIGINS"
 } > "$DEFAULTS_FILE"
-chmod 644 "$DEFAULTS_FILE"
+DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
+chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
+chmod 640 "$DEFAULTS_FILE"
 
 # Create the server startup script
 cat > "${BIN_DIR}/opencode-server-start.sh" << 'SERVERSCRIPT'
@@ -251,9 +288,11 @@ cat > "${BIN_DIR}/opencode-server-start.sh" << 'SERVERSCRIPT'
 
 # Configuration from environment or feature defaults
 DEFAULTS_FILE="/usr/local/etc/opencode-defaults"
+DEFAULTS_LOADED="false"
 if [ -f "$DEFAULTS_FILE" ]; then
     # shellcheck source=/usr/local/etc/opencode-defaults
     . "$DEFAULTS_FILE"
+    DEFAULTS_LOADED="true"
 fi
 
 ENABLE_SERVER="${OPENCODE_ENABLE_SERVER:-${OPENCODE_ENABLE_SERVER_DEFAULT:-false}}"
@@ -263,9 +302,26 @@ ENABLE_MDNS="${OPENCODE_ENABLE_MDNS:-${OPENCODE_ENABLE_MDNS_DEFAULT:-false}}"
 ENABLE_WEB="${OPENCODE_ENABLE_WEB:-${OPENCODE_ENABLE_WEB_DEFAULT:-false}}"
 CORS_ORIGINS="${OPENCODE_CORS_ORIGINS:-${OPENCODE_CORS_ORIGINS_DEFAULT:-}}"
 
+validate_port() {
+    local value="$1"
+    local fallback="$2"
+
+    if [[ "$value" =~ ^[0-9]+$ ]] && [ "$value" -ge 1 ] && [ "$value" -le 65535 ]; then
+        echo "$value"
+        return 0
+    fi
+
+    echo "WARNING: Invalid server port '$value'. Using ${fallback}." >&2
+    echo "$fallback"
+}
+
+PORT="$(validate_port "$PORT" "4096")"
+
 # Only start if server mode is enabled
 if [ "$ENABLE_SERVER" != "true" ]; then
-    echo "OpenCode server mode not enabled. Set enableServer: true to enable."
+    if [ "$DEFAULTS_LOADED" = "true" ] || [ -n "$OPENCODE_ENABLE_SERVER" ]; then
+        echo "OpenCode server mode not enabled. Set enableServer: true to enable."
+    fi
     exit 0
 fi
 
@@ -290,7 +346,14 @@ _get_pid_dir() {
             echo "ERROR: $pid_dir is a symlink. Possible security issue." >&2
             exit 1
         fi
-        mkdir -p "$pid_dir"
+        if ! mkdir -p "$pid_dir"; then
+            echo "ERROR: Could not create PID directory: $pid_dir" >&2
+            exit 1
+        fi
+        if [ -L "$pid_dir" ] || [ ! -d "$pid_dir" ]; then
+            echo "ERROR: PID directory is not a directory: $pid_dir" >&2
+            exit 1
+        fi
         chmod 700 "$pid_dir"
     fi
     echo "$pid_dir"
@@ -322,14 +385,21 @@ fi
 # ============================================================================
 # CORS Origin Validation (Security: prevent shell injection)
 # ============================================================================
+trim_whitespace() {
+    local value="$1"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    printf '%s' "$value"
+}
+
 if [ -n "$CORS_ORIGINS" ]; then
     IFS=',' read -ra ORIGINS <<< "$CORS_ORIGINS"
     for origin in "${ORIGINS[@]}"; do
         # Trim whitespace
-        origin="$(echo "$origin" | xargs)"
+        origin="$(trim_whitespace "$origin")"
         # Validate: must start with http:// or https:// and contain only safe characters
         # CORS Origin header per spec is scheme://host[:port] only - no path, query, or fragment
-        if [[ "$origin" =~ ^https?://[a-zA-Z0-9._:/-]+$ ]]; then
+        if [[ "$origin" =~ ^https?://[a-zA-Z0-9._:-]+$ ]]; then
             ARGS+=(--cors "$origin")
         else
             echo "WARNING: Skipping invalid CORS origin: $origin" >&2
@@ -420,6 +490,15 @@ _get_pid_dir() {
             echo "ERROR: $pid_dir is a symlink. Possible security issue." >&2
             exit 1
         fi
+        if ! mkdir -p "$pid_dir"; then
+            echo "ERROR: Could not create PID directory: $pid_dir" >&2
+            exit 1
+        fi
+        if [ -L "$pid_dir" ] || [ ! -d "$pid_dir" ]; then
+            echo "ERROR: PID directory is not a directory: $pid_dir" >&2
+            exit 1
+        fi
+        chmod 700 "$pid_dir"
     fi
     echo "$pid_dir"
 }
@@ -459,6 +538,15 @@ _get_pid_dir() {
             echo "ERROR: $pid_dir is a symlink. Possible security issue." >&2
             exit 1
         fi
+        if ! mkdir -p "$pid_dir"; then
+            echo "ERROR: Could not create PID directory: $pid_dir" >&2
+            exit 1
+        fi
+        if [ -L "$pid_dir" ] || [ ! -d "$pid_dir" ]; then
+            echo "ERROR: PID directory is not a directory: $pid_dir" >&2
+            exit 1
+        fi
+        chmod 700 "$pid_dir"
     fi
     echo "$pid_dir"
 }
@@ -475,6 +563,20 @@ fi
 
 PORT="${OPENCODE_SERVER_PORT:-${OPENCODE_SERVER_PORT_DEFAULT:-4096}}"
 HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-0.0.0.0}}"
+
+validate_port() {
+    local value="$1"
+    local fallback="$2"
+
+    if [[ "$value" =~ ^[0-9]+$ ]] && [ "$value" -ge 1 ] && [ "$value" -le 65535 ]; then
+        echo "$value"
+        return 0
+    fi
+
+    echo "$fallback"
+}
+
+PORT="$(validate_port "$PORT" "4096")"
 
 # Use localhost for health checks even if bound to 0.0.0.0
 HEALTH_HOST="127.0.0.1"
@@ -570,6 +672,15 @@ _get_pid_dir() {
             echo "ERROR: $pid_dir is a symlink. Possible security issue." >&2
             exit 1
         fi
+        if ! mkdir -p "$pid_dir"; then
+            echo "ERROR: Could not create PID directory: $pid_dir" >&2
+            exit 1
+        fi
+        if [ -L "$pid_dir" ] || [ ! -d "$pid_dir" ]; then
+            echo "ERROR: PID directory is not a directory: $pid_dir" >&2
+            exit 1
+        fi
+        chmod 700 "$pid_dir"
     fi
     echo "$pid_dir"
 }

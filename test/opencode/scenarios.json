@@ -7,5 +7,44 @@
             },
             "opencode": "latest"
         }
+    },
+    "npm-install": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "node": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "installMethod": "npm"
+            }
+        }
+    },
+    "server-enabled": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "node": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "enableServer": true,
+                "serverHostname": "127.0.0.1",
+                "serverPort": "4096",
+                "corsOrigins": "http://localhost:3000,https://example.com"
+            }
+        }
+    },
+    "invalid-port": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "node": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "serverPort": "notaport"
+            }
+        }
     }
 }
