@@ -51,11 +51,18 @@ get_target_home() {
     local user="$1"
     local home="${_REMOTE_USER_HOME:-}"
 
-    if [ -z "$home" ]; then
+    if [ -z "$home" ] && command -v getent &>/dev/null; then
         home=$(getent passwd "$user" 2>/dev/null | cut -d: -f6)
     fi
+    if [ -z "$home" ] && [ -r /etc/passwd ]; then
+        home=$(awk -F: -v u="$user" '$1==u{print $6}' /etc/passwd)
+    fi
     if [ -z "$home" ]; then
-        home=$(eval echo "~$user" 2>/dev/null)
+        if [ "$user" = "root" ]; then
+            home="/root"
+        else
+            home="/home/$user"
+        fi
     fi
     if [ -z "$home" ] || [ "$home" = "~$user" ]; then
         echo "WARNING: Could not determine home for '$user'. Using /root." >&2
@@ -66,6 +73,51 @@ get_target_home() {
 
 REMOTE_USER="$(get_target_user)"
 REMOTE_USER_HOME="$(get_target_home "$REMOTE_USER")"
+
+# ============================================================================
+# Input Validation
+# ============================================================================
+validate_port() {
+    local value="$1"
+    local fallback="$2"
+    local label="$3"
+
+    if [[ "$value" =~ ^[0-9]+$ ]] && [ "$value" -ge 1 ] && [ "$value" -le 65535 ]; then
+        echo "$value"
+        return 0
+    fi
+
+    echo "WARNING: Invalid ${label} port '$value'. Using ${fallback}." >&2
+    echo "$fallback"
+}
+
+normalize_approval_mode() {
+    case "$1" in
+        suggest|auto|full-auto)
+            echo "$1"
+            ;;
+        *)
+            echo "WARNING: Invalid approvalMode '$1'. Using 'suggest'." >&2
+            echo "suggest"
+            ;;
+    esac
+}
+
+normalize_sandbox_mode() {
+    case "$1" in
+        workspace-write|full-access|read-only)
+            echo "$1"
+            ;;
+        *)
+            echo "WARNING: Invalid sandboxMode '$1'. Using 'workspace-write'." >&2
+            echo "workspace-write"
+            ;;
+    esac
+}
+
+OAUTHPORT="$(validate_port "$OAUTHPORT" "1455" "OAuth")"
+APPROVALMODE="$(normalize_approval_mode "$APPROVALMODE")"
+SANDBOXMODE="$(normalize_sandbox_mode "$SANDBOXMODE")"
 
 # Ensure bin directory exists
 mkdir -p "$BIN_DIR"
@@ -99,6 +151,7 @@ install_npm() {
 
 verify_codex_installation() {
     local npm_global_bin
+    # NOTE: This verifier is only used for npm installs, so npm is expected to exist.
     npm_global_bin="$(npm prefix -g)/bin"
 
     if command -v codex &> /dev/null; then
@@ -188,6 +241,38 @@ install_binary() {
     if ! curl -fsSL "$RELEASE_URL" -o "${TEMP_DIR}/codex.tar.gz"; then
         echo "ERROR: Failed to download Codex binary"
         exit 1
+    fi
+
+    # Verify checksum if checksums are published for this release
+    CHECKSUM_URL=""
+    if [ "$VERSION" = "latest" ]; then
+        CHECKSUM_URL="https://github.com/openai/codex/releases/latest/download/checksums.txt"
+    else
+        CHECKSUM_URL="https://github.com/openai/codex/releases/download/${VERSION}/checksums.txt"
+    fi
+
+    if curl -fsSL "$CHECKSUM_URL" -o "${TEMP_DIR}/checksums.txt"; then
+        checksum_line=$(grep -E " ${BINARY_NAME}\\.tar\\.gz$" "${TEMP_DIR}/checksums.txt" | head -1 || true)
+        if [ -n "$checksum_line" ]; then
+            checksum=$(printf '%s' "$checksum_line" | awk '{print $1}')
+            if command -v sha256sum &>/dev/null; then
+                echo "${checksum}  ${TEMP_DIR}/codex.tar.gz" | sha256sum -c - || {
+                    echo "ERROR: Codex binary checksum verification failed"
+                    exit 1
+                }
+            elif command -v shasum &>/dev/null; then
+                echo "${checksum}  ${TEMP_DIR}/codex.tar.gz" | shasum -a 256 -c - || {
+                    echo "ERROR: Codex binary checksum verification failed"
+                    exit 1
+                }
+            else
+                echo "WARNING: No sha256 tool available; skipping checksum verification" >&2
+            fi
+        else
+            echo "WARNING: No matching checksum found for ${BINARY_NAME}.tar.gz; skipping verification" >&2
+        fi
+    else
+        echo "WARNING: Checksums file not available; skipping verification" >&2
     fi
 
     # Extract and find the binary (handle different archive structures)
@@ -284,7 +369,9 @@ mkdir -p "$DEFAULTS_DIR"
 {
     printf 'CODEX_OAUTH_PORT_DEFAULT=%q\n' "$OAUTHPORT"
 } > "$DEFAULTS_FILE"
-chmod 644 "$DEFAULTS_FILE"
+DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
+chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
+chmod 640 "$DEFAULTS_FILE"
 
 # Create remote authentication helper
 cat > "${BIN_DIR}/codex-remote-auth" << 'AUTHSCRIPT'
@@ -361,7 +448,6 @@ cat > "${BIN_DIR}/codex-exec" << 'EXECSCRIPT'
 # Run Codex in non-interactive mode
 
 PROMPT="$1"
-shift
 
 if [ -z "$PROMPT" ]; then
     echo "Usage: codex-exec \"<prompt>\" [additional options]"
@@ -373,6 +459,7 @@ if [ -z "$PROMPT" ]; then
     exit 1
 fi
 
+shift
 codex exec "$PROMPT" "$@"
 EXECSCRIPT
 

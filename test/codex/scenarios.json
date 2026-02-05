@@ -7,5 +7,40 @@
             },
             "codex": "latest"
         }
+    },
+    "binary-install": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "codex": {
+                "version": "latest",
+                "installMethod": "binary"
+            }
+        }
+    },
+    "approval-sandbox": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "node": {
+                "version": "22"
+            },
+            "codex": {
+                "version": "latest",
+                "approvalMode": "full-auto",
+                "sandboxMode": "read-only"
+            }
+        }
+    },
+    "invalid-modes": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "node": {
+                "version": "22"
+            },
+            "codex": {
+                "version": "latest",
+                "approvalMode": "nope",
+                "sandboxMode": "bad"
+            }
+        }
     }
 }
