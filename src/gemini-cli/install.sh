@@ -10,6 +10,8 @@ ENABLEVERTEXAI="${ENABLEVERTEXAI:-false}"
 # Fixed install location (helper scripts use static paths)
 BIN_DIR="/usr/local/bin"
 
+# NOTE: No cleanup trap needed; this installer doesn't create temporary files.
+
 # ============================================================================
 # Robust User Detection
 # ============================================================================
@@ -29,11 +31,18 @@ get_target_home() {
     local user="$1"
     local home="${_REMOTE_USER_HOME:-}"
 
-    if [ -z "$home" ]; then
+    if [ -z "$home" ] && command -v getent &>/dev/null; then
         home=$(getent passwd "$user" 2>/dev/null | cut -d: -f6)
     fi
+    if [ -z "$home" ] && [ -r /etc/passwd ]; then
+        home=$(awk -F: -v u="$user" '$1==u{print $6}' /etc/passwd)
+    fi
     if [ -z "$home" ]; then
-        home=$(eval echo "~$user" 2>/dev/null)
+        if [ "$user" = "root" ]; then
+            home="/root"
+        else
+            home="/home/$user"
+        fi
     fi
     if [ -z "$home" ] || [ "$home" = "~$user" ]; then
         echo "WARNING: Could not determine home for '$user'. Using /root." >&2
@@ -127,9 +136,18 @@ fi
 
 # Create default settings if model specified
 if [ -n "$DEFAULTMODEL" ]; then
+    json_escape() {
+        printf '%s' "$1" | sed \
+            -e 's/\\/\\\\/g' \
+            -e 's/"/\\"/g' \
+            -e 's/\t/\\t/g' \
+            -e 's/\r/\\r/g' \
+            -e ':a;N;$!ba;s/\n/\\n/g'
+    }
+    model_escaped="$(json_escape "$DEFAULTMODEL")"
     cat > "${SETTINGS_DIR}/settings.json" << SETTINGSEOF
 {
-    "model": "${DEFAULTMODEL}"
+    "model": "${model_escaped}"
 }
 SETTINGSEOF
     chown "$REMOTE_USER:$REMOTE_USER" "${SETTINGS_DIR}/settings.json" 2>/dev/null || true
@@ -137,7 +155,10 @@ fi
 
 # Set Vertex AI environment if enabled
 if [ "$ENABLEVERTEXAI" = "true" ]; then
-    echo 'export GOOGLE_GENAI_USE_VERTEXAI=true' >> /etc/profile.d/gemini-cli.sh
+    cat > /etc/profile.d/gemini-cli.sh << 'PROFILEEOF'
+export GOOGLE_GENAI_USE_VERTEXAI=true
+PROFILEEOF
+    chmod 644 /etc/profile.d/gemini-cli.sh
 fi
 
 # Create remote authentication helper
@@ -238,7 +259,6 @@ cat > "${BIN_DIR}/gemini-headless" << 'HEADLESSSCRIPT'
 # Run Gemini CLI in headless mode
 
 PROMPT="$1"
-shift
 
 if [ -z "$PROMPT" ]; then
     echo "Usage: gemini-headless \"<prompt>\" [additional options]"
@@ -254,6 +274,7 @@ if [ -z "$PROMPT" ]; then
     exit 1
 fi
 
+shift
 gemini -p "$PROMPT" "$@"
 HEADLESSSCRIPT
 
@@ -265,7 +286,6 @@ cat > "${BIN_DIR}/gemini-json" << 'JSONSCRIPT'
 # Run Gemini with JSON output and extract response
 
 PROMPT="$1"
-shift
 
 if [ -z "$PROMPT" ]; then
     echo "Usage: gemini-json \"<prompt>\" [additional options]"
@@ -275,6 +295,7 @@ if [ -z "$PROMPT" ]; then
     exit 1
 fi
 
+shift
 if ! command -v jq &> /dev/null; then
     echo "ERROR: jq is required for gemini-json."
     echo "Install jq or use 'gemini-headless' instead."

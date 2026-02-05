@@ -7,5 +7,29 @@
             },
             "gemini-cli": "latest"
         }
+    },
+    "vertex-ai": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "node": {
+                "version": "22"
+            },
+            "gemini-cli": {
+                "version": "latest",
+                "enableVertexAI": true
+            }
+        }
+    },
+    "default-model": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "node": {
+                "version": "22"
+            },
+            "gemini-cli": {
+                "version": "latest",
+                "defaultModel": "gemini-1.5-pro"
+            }
+        }
     }
 }
