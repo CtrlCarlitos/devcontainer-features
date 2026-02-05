@@ -105,6 +105,7 @@ install_native() {
 
     # Install to /usr/local/bin for system-wide access
     export OPENCODE_INSTALL_DIR="$BIN_DIR"
+    export XDG_BIN_DIR="$BIN_DIR"
 
     if [ "$VERSION" = "latest" ]; then
         env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
@@ -115,6 +116,44 @@ install_native() {
             env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
         fi
     fi
+}
+
+# Verify installation and create symlink if needed
+verify_opencode_installation() {
+    if command -v opencode &> /dev/null; then
+        return 0
+    fi
+
+    local npm_global_bin=""
+    if command -v npm &> /dev/null; then
+        npm_global_bin="$(npm prefix -g)/bin"
+    fi
+
+    local candidates=(
+        "$BIN_DIR/opencode"
+        "/usr/local/bin/opencode"
+        "${npm_global_bin}/opencode"
+        "${REMOTE_USER_HOME}/.local/bin/opencode"
+        "${REMOTE_USER_HOME}/.opencode/bin/opencode"
+        "/root/.local/bin/opencode"
+        "/root/.opencode/bin/opencode"
+    )
+
+    for candidate in "${candidates[@]}"; do
+        if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+            ln -sf "$candidate" "${BIN_DIR}/opencode"
+            export PATH="${BIN_DIR}:$PATH"
+            return 0
+        fi
+    done
+
+    echo "ERROR: opencode CLI not found after install."
+    if [ -n "$npm_global_bin" ]; then
+        echo "DEBUG: npm prefix -g = $(npm prefix -g 2>/dev/null || echo 'failed')"
+        echo "DEBUG: Contents of ${npm_global_bin}:"
+        ls -la "${npm_global_bin}" 2>/dev/null || echo "Directory not found"
+    fi
+    return 1
 }
 
 # ============================================================================
@@ -154,10 +193,10 @@ case "$INSTALLMETHOD" in
         echo "Valid options: native, npm"
         exit 1
         ;;
- esac
+esac
 
 # Verify installation
-if ! command -v opencode &> /dev/null; then
+if ! verify_opencode_installation; then
     echo "ERROR: OpenCode installation failed"
     exit 1
 fi
