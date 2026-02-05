@@ -7,7 +7,13 @@ ENABLEMCPSERVER="${ENABLEMCPSERVER:-false}"
 AUTHMETHOD="${AUTHMETHOD:-none}"
 OAUTHPORT="${OAUTHPORT:-52780}"
 SKIPPERMISSIONS="${SKIPPERMISSIONS:-false}"
-INSTALLMETHOD="${INSTALLMETHOD:-native}"
+
+# Claude Code supports only the native installer (npm is deprecated/unsupported).
+if [ -n "${INSTALLMETHOD:-}" ] && [ "${INSTALLMETHOD}" != "native" ]; then
+    echo "ERROR: installMethod is no longer supported for Claude Code."
+    echo "Use the native installer (default) without installMethod."
+    exit 1
+fi
 
 # Fixed install location (helper scripts use static paths)
 BIN_DIR="/usr/local/bin"
@@ -46,11 +52,18 @@ get_target_home() {
     local user="$1"
     local home="${_REMOTE_USER_HOME:-}"
 
-    if [ -z "$home" ]; then
+    if [ -z "$home" ] && command -v getent &>/dev/null; then
         home=$(getent passwd "$user" 2>/dev/null | cut -d: -f6)
     fi
+    if [ -z "$home" ] && [ -r /etc/passwd ]; then
+        home=$(awk -F: -v u="$user" '$1==u{print $6}' /etc/passwd)
+    fi
     if [ -z "$home" ]; then
-        home=$(eval echo "~$user" 2>/dev/null)
+        if [ "$user" = "root" ]; then
+            home="/root"
+        else
+            home="/home/$user"
+        fi
     fi
     if [ -z "$home" ] || [ "$home" = "~$user" ]; then
         echo "WARNING: Could not determine home for '$user'. Using /root." >&2
@@ -62,19 +75,35 @@ get_target_home() {
 REMOTE_USER="$(get_target_user)"
 REMOTE_USER_HOME="$(get_target_home "$REMOTE_USER")"
 
+# ============================================================================
+# Input Validation
+# ============================================================================
+validate_port() {
+    local value="$1"
+    local fallback="$2"
+    local label="$3"
+
+    if [[ "$value" =~ ^[0-9]+$ ]] && [ "$value" -ge 1 ] && [ "$value" -le 65535 ]; then
+        echo "$value"
+        return 0
+    fi
+
+    echo "WARNING: Invalid ${label} port '$value'. Using ${fallback}." >&2
+    echo "$fallback"
+}
+
+OAUTHPORT="$(validate_port "$OAUTHPORT" "52780" "OAuth")"
+
 # Ensure bin directory exists
 mkdir -p "$BIN_DIR"
 
 echo "Installing Claude Code..."
 echo "Target user: $REMOTE_USER"
 echo "Target home: $REMOTE_USER_HOME"
-echo "Install method: $INSTALLMETHOD"
 
 # ============================================================================
-# INSTALLATION METHOD: Native Installer (RECOMMENDED)
+# INSTALLATION METHOD: Native Installer (Only supported method)
 # ============================================================================
-# The native installer is now the recommended method by Anthropic.
-# npm installation is deprecated and will show a warning message.
 #
 # Key considerations for devcontainers:
 # - The native installer installs to ~/.local/bin/claude or ~/.claude/bin/claude
@@ -86,7 +115,7 @@ install_native() {
     echo "Using native installer (recommended by Anthropic)..."
 
     if ! command -v curl &> /dev/null; then
-        echo "ERROR: curl not found. Install curl or use installMethod: npm"
+        echo "ERROR: curl not found. Install curl before running this feature."
         exit 1
     fi
 
@@ -124,7 +153,6 @@ install_native() {
             # Try passing version; fall back to latest if not supported
             if ! su - "$REMOTE_USER" -c "bash $INSTALLER --version $VERSION" 2>/dev/null; then
                 echo "NOTE: Installer may not support version pinning. Installing latest."
-                echo "For specific versions, use installMethod: npm"
                 su - "$REMOTE_USER" -c "bash $INSTALLER"
             fi
         fi
@@ -140,51 +168,11 @@ install_native() {
         fi
     fi
 }
-
-# ============================================================================
-# INSTALLATION METHOD: npm (DEPRECATED - fallback only)
-# ============================================================================
-# This method is deprecated by Anthropic and shows a warning message.
-# Only use if native installer fails or for specific compatibility needs.
-# ============================================================================
-
-install_npm() {
-    echo "WARNING: npm installation is DEPRECATED by Anthropic."
-    echo "You will see a deprecation warning when running claude."
-    echo "Consider switching to native installer (installMethod: native)."
-    echo ""
-
-    # Check if npm is available
-    if ! command -v npm &> /dev/null; then
-        echo "ERROR: npm not found. Install Node.js or use installMethod: native"
-        exit 1
-    fi
-
-    # Install globally - avoid sudo npm install -g
-    if [ "$VERSION" = "latest" ]; then
-        npm install -g @anthropic-ai/claude-code
-    else
-        npm install -g @anthropic-ai/claude-code@"$VERSION"
-    fi
-}
-
 # ============================================================================
 # Main Installation Logic
 # ============================================================================
 
-case "$INSTALLMETHOD" in
-    native)
-        install_native
-        ;;
-    npm)
-        install_npm
-        ;;
-    *)
-        echo "Unknown install method: $INSTALLMETHOD"
-        echo "Valid options: native (recommended), npm (deprecated)"
-        exit 1
-        ;;
- esac
+install_native
 
 # Verify installation
 CLAUDE_BIN=""
@@ -231,7 +219,9 @@ mkdir -p "$DEFAULTS_DIR"
 {
     printf 'CLAUDE_CODE_OAUTH_PORT_DEFAULT=%q\n' "$OAUTHPORT"
 } > "$DEFAULTS_FILE"
-chmod 644 "$DEFAULTS_FILE"
+DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
+chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
+chmod 640 "$DEFAULTS_FILE"
 
 # Create helper script for remote authentication
 cat > "${BIN_DIR}/claude-remote-auth" << 'AUTHSCRIPT'
@@ -303,7 +293,6 @@ cat > "${BIN_DIR}/claude-headless" << 'HEADLESSSCRIPT'
 # Run Claude Code in headless mode with common options
 
 PROMPT="$1"
-shift
 
 if [ -z "$PROMPT" ]; then
     echo "Usage: claude-headless \"<prompt>\" [additional claude options]"
@@ -315,6 +304,7 @@ if [ -z "$PROMPT" ]; then
     exit 1
 fi
 
+shift
 claude -p "$PROMPT" "$@"
 HEADLESSSCRIPT
 

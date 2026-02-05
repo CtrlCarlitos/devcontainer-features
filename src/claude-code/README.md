@@ -1,14 +1,13 @@
 
 # Claude Code (claude-code)
 
-Installs Claude Code with headless mode and MCP server helpers. Uses the native installer by default (recommended by Anthropic).
+Installs Claude Code with headless mode and MCP server helpers. Uses the native installer (recommended by Anthropic).
 
 ## Example Usage
 
 ```json
 "features": {
     "ghcr.io/CtrlCarlitos/devcontainer-features/claude-code:1": {
-        "installMethod": "native",
         "skipPermissions": true
     }
 }
@@ -19,7 +18,6 @@ Installs Claude Code with headless mode and MCP server helpers. Uses the native 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
 | version | Claude Code version to install (e.g., 'latest', '1.0.58') | string | latest |
-| installMethod | Installation method. 'native' (recommended) uses official installer, 'npm' is deprecated but available as fallback | string | native |
 | enableMcpServer | Configure Claude Code to be available as an MCP server for other agents | boolean | false |
 | authMethod | Preferred authentication method. 'api-key' uses ANTHROPIC_API_KEY env var, 'oauth' requires browser | string | none |
 | oauthPort | Port for OAuth callback server (for SSH port forwarding when using browser auth) | string | 52780 |
