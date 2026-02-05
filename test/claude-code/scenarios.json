@@ -2,10 +2,34 @@
     "default": {
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {
-            "node": {
-                "version": "22"
-            },
             "claude-code": "latest"
+        }
+    },
+    "skip-permissions": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "claude-code": {
+                "version": "latest",
+                "skipPermissions": true
+            }
+        }
+    },
+    "custom-oauth-port": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "claude-code": {
+                "version": "latest",
+                "oauthPort": "6001"
+            }
+        }
+    },
+    "invalid-oauth-port": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "claude-code": {
+                "version": "latest",
+                "oauthPort": "notaport"
+            }
         }
     }
 }
