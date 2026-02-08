@@ -21,4 +21,4 @@ Installs BMad Method, an AI agent framework for Agile AI-driven development. Req
 
 ---
 
-_Note: This file was auto-generated from the [devcontainer-feature.json](https://github.com/CtrlCarlitos/devcontainer-features/blob/main/src/bmad-method/devcontainer-feature.json).  Add additional notes to a `NOTES.md`._
+_Note: This file was auto-generated from the [devcontainer-feature.json](devcontainer-feature.json).  Add additional notes to a `NOTES.md`._
