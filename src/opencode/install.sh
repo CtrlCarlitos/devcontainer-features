@@ -7,6 +7,7 @@ INSTALLMETHOD="${INSTALLMETHOD:-native}"
 ENABLESERVER="${ENABLESERVER:-false}"
 SERVERPORT="${SERVERPORT:-4096}"
 SERVERHOSTNAME="${SERVERHOSTNAME:-0.0.0.0}"
+SERVERPASSWORD="${SERVERPASSWORD:-}"
 ENABLEMDNS="${ENABLEMDNS:-false}"
 ENABLEWEBMODE="${ENABLEWEBMODE:-false}"
 CORSORIGINS="${CORSORIGINS:-}"
@@ -274,6 +275,7 @@ mkdir -p "$DEFAULTS_DIR"
     printf 'OPENCODE_ENABLE_SERVER_DEFAULT=%q\n' "$ENABLESERVER"
     printf 'OPENCODE_SERVER_PORT_DEFAULT=%q\n' "$SERVERPORT"
     printf 'OPENCODE_SERVER_HOSTNAME_DEFAULT=%q\n' "$SERVERHOSTNAME"
+    printf 'OPENCODE_SERVER_PASSWORD_DEFAULT=%q\n' "$SERVERPASSWORD"
     printf 'OPENCODE_ENABLE_MDNS_DEFAULT=%q\n' "$ENABLEMDNS"
     printf 'OPENCODE_ENABLE_WEB_DEFAULT=%q\n' "$ENABLEWEBMODE"
     printf 'OPENCODE_CORS_ORIGINS_DEFAULT=%q\n' "$CORSORIGINS"
@@ -322,7 +324,16 @@ if [ "$ENABLE_SERVER" != "true" ]; then
     if [ "$DEFAULTS_LOADED" = "true" ] || [ -n "$OPENCODE_ENABLE_SERVER" ]; then
         echo "OpenCode server mode not enabled. Set enableServer: true to enable."
     fi
+    if [ "$DEFAULTS_LOADED" = "true" ] || [ -n "$OPENCODE_ENABLE_SERVER" ]; then
+        echo "OpenCode server mode not enabled. Set enableServer: true to enable."
+    fi
     exit 0
+fi
+
+# Export password if set (from env or defaults)
+SERVER_PASSWORD="${OPENCODE_SERVER_PASSWORD:-${OPENCODE_SERVER_PASSWORD_DEFAULT:-}}"
+if [ -n "$SERVER_PASSWORD" ]; then
+    export OPENCODE_SERVER_PASSWORD="$SERVER_PASSWORD"
 fi
 
 # Detect devcontainer environment
@@ -397,13 +408,18 @@ if [ -n "$CORS_ORIGINS" ]; then
     for origin in "${ORIGINS[@]}"; do
         # Trim whitespace
         origin="$(trim_whitespace "$origin")"
+
+        # Auto-fix: Prepend http:// if scheme is missing (common user error)
+        if [[ ! "$origin" =~ ^https?:// ]]; then
+            origin="http://${origin}"
+        fi
+
         # Validate: must start with http:// or https:// and contain only safe characters
-        # CORS Origin header per spec is scheme://host[:port] only - no path, query, or fragment
         if [[ "$origin" =~ ^https?://[a-zA-Z0-9._:-]+$ ]]; then
             ARGS+=(--cors "$origin")
         else
             echo "WARNING: Skipping invalid CORS origin: $origin" >&2
-            echo "  CORS origins must be scheme://host[:port] format (no query params or fragments)" >&2
+            echo "  CORS origins must be scheme://host[:port] format" >&2
         fi
     done
 fi
