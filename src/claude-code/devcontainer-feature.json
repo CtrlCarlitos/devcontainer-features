@@ -42,7 +42,7 @@
                 "remote.portsAttributes": {
                     "52780": {
                         "label": "Claude Code OAuth",
-                        "onAutoForward": "silent"
+                        "onAutoForward": "notify"
                     }
                 }
             }
