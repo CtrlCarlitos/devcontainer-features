@@ -284,6 +284,20 @@ DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
 chmod 644 "$DEFAULTS_FILE"
 
+# Create /etc/profile.d initialization script for interactive shells
+cat > /etc/profile.d/00-opencode-init.sh << 'PROFILEEOF'
+# Source OpenCode defaults
+if [ -f "/usr/local/etc/opencode-defaults" ]; then
+    . "/usr/local/etc/opencode-defaults"
+fi
+
+# Export server password if default is set
+if [ -n "$OPENCODE_SERVER_PASSWORD_DEFAULT" ]; then
+    export OPENCODE_SERVER_PASSWORD="$OPENCODE_SERVER_PASSWORD_DEFAULT"
+fi
+PROFILEEOF
+chmod 644 /etc/profile.d/00-opencode-init.sh
+
 # Create the server startup script
 cat > "${BIN_DIR}/opencode-server-start.sh" << 'SERVERSCRIPT'
 #!/bin/bash
@@ -451,11 +465,19 @@ fi
 # Start the appropriate server mode (append to log)
 if [ "$ENABLE_WEB" = "true" ]; then
     echo "Starting OpenCode web server on ${HOSTNAME}:${PORT}..."
-    nohup opencode web "${ARGS[@]}" < /dev/null >> "$LOG_FILE" 2>&1 &
+    if command -v setsid >/dev/null 2>&1; then
+        setsid opencode web "${ARGS[@]}" < /dev/null >> "$LOG_FILE" 2>&1 &
+    else
+        nohup opencode web "${ARGS[@]}" < /dev/null >> "$LOG_FILE" 2>&1 &
+    fi
     disown
 else
     echo "Starting OpenCode headless server on ${HOSTNAME}:${PORT}..."
-    nohup opencode serve "${ARGS[@]}" < /dev/null >> "$LOG_FILE" 2>&1 &
+    if command -v setsid >/dev/null 2>&1; then
+        setsid opencode serve "${ARGS[@]}" < /dev/null >> "$LOG_FILE" 2>&1 &
+    else
+        nohup opencode serve "${ARGS[@]}" < /dev/null >> "$LOG_FILE" 2>&1 &
+    fi
     disown
 fi
 
