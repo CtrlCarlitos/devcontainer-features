@@ -74,5 +74,11 @@
                 "plugins": "opencode-gemini-auth"
             }
         }
+    },
+    "permissions": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "opencode": "latest"
+        }
     }
 }
