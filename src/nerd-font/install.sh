@@ -70,12 +70,15 @@ mkdir -p "$FONT_DIR"
 # Resolve latest version if requested
 if [ "$VERSION" = "latest" ]; then
     echo "Resolving latest Nerd Fonts release..."
-    VERSION=$(curl -fsSL "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" \
-        | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' \
-        | head -n1)
+    # Use redirect URL to avoid GitHub API rate limits (403)
+    # Redirects to https://github.com/ryanoasis/nerd-fonts/releases/tag/vX.Y.Z
+    LATEST_URL=$(curl -fsSL -I -o /dev/null -w "%{url_effective}" https://github.com/ryanoasis/nerd-fonts/releases/latest)
+    
+    # Extract version from URL (remove 'v' prefix if present)
+    VERSION=$(echo "$LATEST_URL" | sed 's|.*/tag/v\{0,1\}||')
 
-    if [ -z "$VERSION" ]; then
-        echo "ERROR: Unable to resolve latest Nerd Fonts version (GitHub API may be rate-limited)."
+    if [ -z "$VERSION" ] || [ "$VERSION" = "latest" ]; then
+        echo "ERROR: Unable to resolve latest Nerd Fonts version from URL: $LATEST_URL"
         exit 1
     fi
     echo "Resolved latest version: ${VERSION}"
