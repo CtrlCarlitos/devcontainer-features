@@ -8,10 +8,19 @@
     "ghcr.io/ctrlcarlitos/devcontainer-features/opencode:1": {
         "enableServer": true,
         "enableWebMode": true,
+        "serverHostname": "0.0.0.0",
+        "serverPassword": "your-secure-password",
         "corsOrigins": "opencode.localhost"
     }
 }
 ```
+
+### Server Startup & troubleshooting
+
+The OpenCode server is configured to start automatically via `postStartCommand`. If it does not start:
+1.  Check logs: `cat /tmp/opencode-$(id -u)/opencode-server.log`
+2.  Start manually: `opencode-server-start.sh`
+3.  Check status: `opencode-server-status`
 
 ### Option 2: Direct Localhost Access
 

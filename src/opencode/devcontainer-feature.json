@@ -32,7 +32,12 @@
         "serverHostname": {
             "type": "string",
             "default": "0.0.0.0",
-            "description": "WARNING: Defaults to '0.0.0.0' (network-accessible). Set OPENCODE_SERVER_PASSWORD when exposed! Use '127.0.0.1' for localhost-only access."
+            "description": "WARNING: Defaults to '0.0.0.0' (network-accessible). Set serverPassword for security, or use '127.0.0.1' for localhost-only access."
+        },
+        "serverPassword": {
+            "type": "string",
+            "default": "",
+            "description": "Password for OpenCode server authentication (recommended when exposing to network)"
         },
         "enableMdns": {
             "type": "boolean",
