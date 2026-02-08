@@ -280,6 +280,10 @@ echo "OpenCode installed successfully: $(opencode --version)"
 DEFAULTS_DIR="/usr/local/etc"
 DEFAULTS_FILE="${DEFAULTS_DIR}/opencode-defaults"
 mkdir -p "$DEFAULTS_DIR"
+
+echo "Debug: Writing defaults file..."
+echo "Debug: SERVERPASSWORD length before write: ${#SERVERPASSWORD}"
+
 {
     printf 'OPENCODE_ENABLE_SERVER_DEFAULT=%q\n' "$ENABLESERVER"
     printf 'OPENCODE_SERVER_PORT_DEFAULT=%q\n' "$SERVERPORT"
