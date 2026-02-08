@@ -11,6 +11,7 @@ const STRATEGIES = {
     'bmad-method': { type: 'npm', package: 'bmad-method' },
     'claude-code': { type: 'npm', package: '@anthropic-ai/claude-code' },
     'codex': { type: 'npm', package: '@openai/codex' },
+    'gemini-cli': { type: 'npm', package: '@google/gemini-cli' },
     'opencode': { type: 'npm', package: 'opencode-ai' }
 };
 
