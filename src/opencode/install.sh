@@ -101,7 +101,16 @@ mkdir -p "$BIN_DIR"
 echo "Installing OpenCode..."
 echo "Target user: $REMOTE_USER"
 echo "Target home: $REMOTE_USER_HOME"
+echo "Installing OpenCode..."
+echo "Target user: $REMOTE_USER"
+echo "Target home: $REMOTE_USER_HOME"
 echo "Install method: $INSTALLMETHOD"
+echo "Debug: SERVERPASSWORD length: ${#SERVERPASSWORD}"
+if [ -n "$SERVERPASSWORD" ]; then
+    echo "Debug: SERVERPASSWORD is set (masked)"
+else
+    echo "Debug: SERVERPASSWORD is empty"
+fi
 
 # ============================================================================
 # INSTALLATION METHOD: Native Installer (RECOMMENDED)
