@@ -288,7 +288,8 @@ echo "Debug: SERVERPASSWORD length before write: ${#SERVERPASSWORD}"
     printf 'OPENCODE_ENABLE_SERVER_DEFAULT=%q\n' "$ENABLESERVER"
     printf 'OPENCODE_SERVER_PORT_DEFAULT=%q\n' "$SERVERPORT"
     printf 'OPENCODE_SERVER_HOSTNAME_DEFAULT=%q\n' "$SERVERHOSTNAME"
-    printf 'OPENCODE_SERVER_PASSWORD_DEFAULT=%q\n' "$SERVERPASSWORD"
+    # Force quotes for password to ensure it's handled correctly by shells and regex
+    printf 'OPENCODE_SERVER_PASSWORD_DEFAULT="%s"\n' "$SERVERPASSWORD"
     printf 'OPENCODE_ENABLE_MDNS_DEFAULT=%q\n' "$ENABLEMDNS"
     printf 'OPENCODE_ENABLE_WEB_DEFAULT=%q\n' "$ENABLEWEBMODE"
     printf 'OPENCODE_CORS_ORIGINS_DEFAULT=%q\n' "$CORSORIGINS"
@@ -296,6 +297,10 @@ echo "Debug: SERVERPASSWORD length before write: ${#SERVERPASSWORD}"
 DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
 chmod 644 "$DEFAULTS_FILE"
+
+echo "Debug: Defaults file content (masked):"
+sed 's/PASSWORD_DEFAULT=.*/PASSWORD_DEFAULT=[MASKED]/' "$DEFAULTS_FILE"
+
 
 # Create /etc/profile.d initialization script for interactive shells
 cat > /etc/profile.d/00-opencode-init.sh << 'PROFILEEOF'
@@ -489,13 +494,8 @@ fi
     echo "--- Configuration ---"
     if [ -f "$DEFAULTS_FILE" ]; then
         echo "Defaults File: $DEFAULTS_FILE"
-        # Print defaults but mask the password value for security in logs
-        grep -v "PASSWORD" "$DEFAULTS_FILE" || true
-        if grep -q "OPENCODE_SERVER_PASSWORD_DEFAULT=['\"]..*['\"]" "$DEFAULTS_FILE"; then
-             echo "OPENCODE_SERVER_PASSWORD_DEFAULT=[SET]"
-        else
-             echo "OPENCODE_SERVER_PASSWORD_DEFAULT=[EMPTY/UNSET]"
-        fi
+        echo "Properties (masked):"
+        sed 's/PASSWORD_DEFAULT=.*/PASSWORD_DEFAULT=[MASKED]/' "$DEFAULTS_FILE"
     else
         echo "Defaults File: NOT FOUND"
     fi
