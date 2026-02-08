@@ -371,7 +371,7 @@ mkdir -p "$DEFAULTS_DIR"
 } > "$DEFAULTS_FILE"
 DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
-chmod 640 "$DEFAULTS_FILE"
+chmod 644 "$DEFAULTS_FILE"
 
 # Create remote authentication helper
 cat > "${BIN_DIR}/codex-remote-auth" << 'AUTHSCRIPT'
