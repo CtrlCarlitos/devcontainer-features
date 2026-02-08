@@ -680,6 +680,11 @@ fi
 PORT="${OPENCODE_SERVER_PORT:-${OPENCODE_SERVER_PORT_DEFAULT:-4096}}"
 HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-0.0.0.0}}"
 
+# Ensure password is set from defaults if available
+if [ -z "$OPENCODE_SERVER_PASSWORD" ] && [ -n "$OPENCODE_SERVER_PASSWORD_DEFAULT" ]; then
+    OPENCODE_SERVER_PASSWORD="$OPENCODE_SERVER_PASSWORD_DEFAULT"
+fi
+
 validate_port() {
     local value="$1"
     local fallback="$2"
@@ -708,18 +713,26 @@ fi
 
 # Health check function
 check_health() {
-    if [ "$CURL_AVAILABLE" != "true" ]; then
-        # Can't verify health without curl, assume healthy if process is running
-        return 0
+    # If password is set, we need to authenticate
+    local curl_opts=("-sf") # fail silently on server errors (4xx/5xx)
+    if [ -n "$OPENCODE_SERVER_PASSWORD" ]; then
+        curl_opts+=("-u" "opencode:${OPENCODE_SERVER_PASSWORD}")
     fi
-    local url="http://${HEALTH_HOST}:${PORT}"
-    # Try /doc endpoint (OpenAPI docs - should always exist)
-    if curl -sf "${url}/doc" -o /dev/null --connect-timeout 2 2>/dev/null; then
-        return 0
-    fi
-    # Try root endpoint
-    if curl -sf "${url}/" -o /dev/null --connect-timeout 2 2>/dev/null; then
-        return 0
+
+    if command -v curl >/dev/null; then
+        # Try root endpoint
+        if curl "${curl_opts[@]}" "http://localhost:${PORT}/" >/dev/null 2>&1; then
+            return 0
+        fi
+        # Try doc endpoint
+        if curl "${curl_opts[@]}" "http://localhost:${PORT}/doc" >/dev/null 2>&1; then
+            return 0
+        fi
+    elif command -v wget >/dev/null; then
+         # Fallback to simple connection check if curl is missing
+         if timeout 1 bash -c "</dev/tcp/localhost/${PORT}" 2>/dev/null; then
+             return 0
+         fi
     fi
     return 1
 }

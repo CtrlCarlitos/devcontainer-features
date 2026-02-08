@@ -46,5 +46,20 @@
                 "serverPort": "notaport"
             }
         }
+    },
+    "server-password": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "ghcr.io/devcontainers/features/common-utils": {},
+            "node": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "enableServer": true,
+                "serverHostname": "0.0.0.0",
+                "serverPassword": "testpassword"
+            }
+        }
     }
 }
