@@ -469,9 +469,24 @@ fi
     echo "--- Server Start: $(date) ---"
     echo "User: $(whoami)"
     echo "PATH: $PATH"
+    echo "PID_DIR: $PID_DIR ($(ls -ld "$PID_DIR" 2>/dev/null))"
     echo "Command: $(command -v opencode || echo 'not found')"
     echo "Version: $(opencode --version 2>&1 || echo 'failed to get version')"
-} >> "$LOG_FILE"
+    
+    echo "--- Configuration ---"
+    if [ -f "$DEFAULTS_FILE" ]; then
+        echo "Defaults File: $DEFAULTS_FILE"
+        # Print defaults but mask the password value for security in logs
+        grep -v "PASSWORD" "$DEFAULTS_FILE" || true
+        if grep -q "OPENCODE_SERVER_PASSWORD_DEFAULT=['\"]..*['\"]" "$DEFAULTS_FILE"; then
+             echo "OPENCODE_SERVER_PASSWORD_DEFAULT=[SET]"
+        else
+             echo "OPENCODE_SERVER_PASSWORD_DEFAULT=[EMPTY/UNSET]"
+        fi
+    else
+        echo "Defaults File: NOT FOUND"
+    fi
+} | tee -a "$LOG_FILE"
 
 # Start the appropriate server mode (append to log)
 if [ "$ENABLE_WEB" = "true" ]; then
