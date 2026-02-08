@@ -1,16 +1,13 @@
 
 # OpenAI Codex CLI (codex)
 
-Installs OpenAI Codex CLI with headless mode and MCP server helpers. Uses npm by default (recommended by OpenAI).
+Installs OpenAI Codex CLI with headless mode and MCP server support. Uses npm (the primary installation method recommended by OpenAI).
 
 ## Example Usage
 
 ```json
 "features": {
-    "ghcr.io/CtrlCarlitos/devcontainer-features/codex:1": {
-        "approvalMode": "suggest",
-        "sandboxMode": "workspace-write"
-    }
+    "ghcr.io/CtrlCarlitos/devcontainer-features/codex:1": {}
 }
 ```
 
@@ -26,23 +23,8 @@ Installs OpenAI Codex CLI with headless mode and MCP server helpers. Uses npm by
 | approvalMode | Default approval mode: 'suggest' (review all), 'auto' (auto-approve safe), 'full-auto' (no prompts) | string | suggest |
 | sandboxMode | Sandbox mode for command execution | string | workspace-write |
 
-## Authentication
 
-Codex supports multiple authentication methods.
-
-- API key: set `OPENAI_API_KEY` at runtime.
-- OAuth: use SSH port forwarding to the OAuth port (default `1455`) and sign in with ChatGPT.
-- Device code: run `codex login --device-code` (experimental).
-
-Run `codex-remote-auth` for step-by-step instructions.
-
-## Helper Commands
-
-- `codex-remote-auth` container authentication guide
-- `codex-exec` run headless prompts (`codex exec`)
-- `codex-mcp-server` start MCP server over stdio
-- `codex-info` show auth status and config
 
 ---
 
-_Note: This file was auto-generated from the [devcontainer-feature.json](https://github.com/CtrlCarlitos/devcontainer-features/blob/main/src/codex/devcontainer-feature.json).  Add additional notes to a `NOTES.md`._
+_Note: This file was auto-generated from the [devcontainer-feature.json](devcontainer-feature.json).  Add additional notes to a `NOTES.md`._
