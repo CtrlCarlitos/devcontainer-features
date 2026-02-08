@@ -147,7 +147,9 @@ if [ -n "$DEFAULTMODEL" ]; then
     model_escaped="$(json_escape "$DEFAULTMODEL")"
     cat > "${SETTINGS_DIR}/settings.json" << SETTINGSEOF
 {
-    "model": "${model_escaped}"
+    "model": {
+        "name": "${model_escaped}"
+    }
 }
 SETTINGSEOF
     chown "$REMOTE_USER:$REMOTE_USER" "${SETTINGS_DIR}/settings.json" 2>/dev/null || true
