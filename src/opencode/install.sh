@@ -462,6 +462,17 @@ if [ -f "$LOG_FILE" ]; then
     fi
 fi
 
+# ============================================================================
+# Diagnostic Logging
+# ============================================================================
+{
+    echo "--- Server Start: $(date) ---"
+    echo "User: $(whoami)"
+    echo "PATH: $PATH"
+    echo "Command: $(command -v opencode || echo 'not found')"
+    echo "Version: $(opencode --version 2>&1 || echo 'failed to get version')"
+} >> "$LOG_FILE"
+
 # Start the appropriate server mode (append to log)
 if [ "$ENABLE_WEB" = "true" ]; then
     echo "Starting OpenCode web server on ${HOSTNAME}:${PORT}..."
