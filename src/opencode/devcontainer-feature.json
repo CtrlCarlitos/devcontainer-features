@@ -1,6 +1,6 @@
 {
     "id": "opencode",
-    "version": "1.1.7",
+    "version": "1.1.8",
     "name": "OpenCode",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/opencode",
     "description": "Installs OpenCode AI coding agent with optional server mode for remote connections. Supports both native installer and npm.",
@@ -53,6 +53,11 @@
             "type": "string",
             "default": "",
             "description": "Comma-separated list of additional CORS origins (e.g., 'http://localhost:3000,https://app.example.com')"
+        },
+        "plugins": {
+            "type": "string",
+            "default": "",
+            "description": "Comma separated list of npm plugins to install (e.g. opencode-gemini-auth)"
         }
     },
     "customizations": {
