@@ -12,6 +12,6 @@ else
 fi
 
 check "settings file exists" test -f "$SETTINGS_PATH"
-check "default model set" grep -q "\"model\": \"gemini-1.5-pro\"" "$SETTINGS_PATH"
+check "default model set" grep -q "\"name\": \"gemini-3-pro-preview\"" "$SETTINGS_PATH"
 
 reportResults
