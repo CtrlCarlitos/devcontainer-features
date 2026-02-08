@@ -497,6 +497,18 @@ echo "  http://${DISPLAY_HOST}:${PORT}/doc"
 
 # Save PID for later management
 echo "$SERVER_PID" > "$PID_FILE"
+
+# Immediate health check to catch crash-on-start
+sleep 2
+if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "ERROR: OpenCode server process ($SERVER_PID) died immediately after starting." >&2
+    echo "Application Logs:" >&2
+    echo "---------------------------------------------------" >&2
+    cat "$LOG_FILE" >&2
+    echo "---------------------------------------------------" >&2
+    exit 1
+fi
+
 SERVERSCRIPT
 
 chmod +x "${BIN_DIR}/opencode-server-start.sh"
