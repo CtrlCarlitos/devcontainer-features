@@ -316,6 +316,31 @@ fi
 PROFILEEOF
 chmod 644 /etc/profile.d/00-opencode-init.sh
 
+# Inject into user's rc files for interactive shells
+RC_SNIPPET='
+# OpenCode configuration
+if [ -f "/usr/local/etc/opencode-defaults" ]; then
+    . "/usr/local/etc/opencode-defaults"
+    if [ -n "$OPENCODE_SERVER_PASSWORD_DEFAULT" ]; then
+        export OPENCODE_SERVER_PASSWORD="$OPENCODE_SERVER_PASSWORD_DEFAULT"
+    fi
+fi
+'
+
+update_rc_file() {
+    local rc_file="$1"
+    if [ -f "$rc_file" ]; then
+        if ! grep -q "OpenCode configuration" "$rc_file"; then
+            echo "$RC_SNIPPET" >> "$rc_file"
+            echo "Updated $rc_file"
+        fi
+    fi
+}
+
+update_rc_file "${REMOTE_USER_HOME}/.bashrc"
+update_rc_file "${REMOTE_USER_HOME}/.zshrc"
+
+
 # Create the server startup script
 cat > "${BIN_DIR}/opencode-server-start.sh" << 'SERVERSCRIPT'
 #!/bin/bash
@@ -743,7 +768,14 @@ else
         echo ""
         echo "NOTE: PID file missing. Server may have been started manually."
     else
-        echo "Status: NOT RUNNING"
+        # Fallback: check process list
+        if pgrep -f "opencode.*(serve|web)" >/dev/null; then
+             echo "Status: RUNNING (Verified via process list)"
+             echo "Health: UNKNOWN (PID file missing, health check failed)"
+             echo "NOTE: PID 661/opencode seen in netstat? Run 'netstat -tulpn | grep 4096' to confirm."
+        else
+             echo "Status: NOT RUNNING"
+        fi
     fi
 fi
 STATUSSCRIPT
