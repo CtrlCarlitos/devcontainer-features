@@ -451,10 +451,12 @@ fi
 # Start the appropriate server mode (append to log)
 if [ "$ENABLE_WEB" = "true" ]; then
     echo "Starting OpenCode web server on ${HOSTNAME}:${PORT}..."
-    nohup opencode web "${ARGS[@]}" >> "$LOG_FILE" 2>&1 &
+    nohup opencode web "${ARGS[@]}" < /dev/null >> "$LOG_FILE" 2>&1 &
+    disown
 else
     echo "Starting OpenCode headless server on ${HOSTNAME}:${PORT}..."
-    nohup opencode serve "${ARGS[@]}" >> "$LOG_FILE" 2>&1 &
+    nohup opencode serve "${ARGS[@]}" < /dev/null >> "$LOG_FILE" 2>&1 &
+    disown
 fi
 
 SERVER_PID=$!
