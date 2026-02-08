@@ -304,7 +304,9 @@ echo "Debug: SERVERPASSWORD length before write: ${#SERVERPASSWORD}"
     printf 'OPENCODE_SERVER_PASSWORD_DEFAULT="%s"\n' "$SERVERPASSWORD"
     printf 'OPENCODE_ENABLE_MDNS_DEFAULT=%q\n' "$ENABLEMDNS"
     printf 'OPENCODE_ENABLE_WEB_DEFAULT=%q\n' "$ENABLEWEBMODE"
+    printf 'OPENCODE_ENABLE_WEB_DEFAULT=%q\n' "$ENABLEWEBMODE"
     printf 'OPENCODE_CORS_ORIGINS_DEFAULT=%q\n' "$CORSORIGINS"
+    printf 'OPENCODE_PLUGINS_DEFAULT=%q\n' "$PLUGINS"
 } > "$DEFAULTS_FILE"
 DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
@@ -321,10 +323,11 @@ if [ -f "/usr/local/etc/opencode-defaults" ]; then
     . "/usr/local/etc/opencode-defaults"
 fi
 
-# Export server password if default is set
+# Export server password and plugins if default is set
 if [ -n "$OPENCODE_SERVER_PASSWORD_DEFAULT" ]; then
     export OPENCODE_SERVER_PASSWORD="$OPENCODE_SERVER_PASSWORD_DEFAULT"
 fi
+# Plugins are handled by server start script / config file logic
 PROFILEEOF
 chmod 644 /etc/profile.d/00-opencode-init.sh
 
@@ -356,21 +359,9 @@ update_rc_file "${REMOTE_USER_HOME}/.zshrc"
 
 # Plugin Installation (Optional)
 # ============================================================================
-# Automatic plugin installation during build is currently disabled due to
-if [ -n "$PLUGINS" ]; then
-    echo "Installing plugins: $PLUGINS"
-    if command -v npm >/dev/null 2>&1; then
-        IFS=',' read -ra PLUGIN_LIST <<< "$PLUGINS"
-        for plugin in "${PLUGIN_LIST[@]}"; do
-            # Trim whitespace
-            plugin=$(echo "$plugin" | xargs)
-            if [ -n "$plugin" ]; then
-                echo "Installing plugin: $plugin"
-                npm install -g "$plugin"
-            fi
-        done
-    fi
-fi
+# Plugins are now handled by creating/updating ~/.config/opencode/opencode.json
+# at runtime (in opencode-server-start.sh) to support volume persistence.
+# Global npm install is removed.
 
 # ============================================================================
 # Ensure Permissions for Data Directories
@@ -422,6 +413,53 @@ HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-0.0.0.
 ENABLE_MDNS="${OPENCODE_ENABLE_MDNS:-${OPENCODE_ENABLE_MDNS_DEFAULT:-false}}"
 ENABLE_WEB="${OPENCODE_ENABLE_WEB:-${OPENCODE_ENABLE_WEB_DEFAULT:-false}}"
 CORS_ORIGINS="${OPENCODE_CORS_ORIGINS:-${OPENCODE_CORS_ORIGINS_DEFAULT:-}}"
+PLUGINS="${OPENCODE_PLUGINS:-${OPENCODE_PLUGINS_DEFAULT:-}}"
+
+# Configure Plugins (if specified)
+# This handles persistence even with volumes by ensuring the config exists at runtime
+if [ -n "$PLUGINS" ]; then
+    CONFIG_DIR="${HOME}/.config/opencode"
+    CONFIG_FILE="${CONFIG_DIR}/opencode.json"
+    
+    # Ensure config dir exists
+    if [ ! -d "$CONFIG_DIR" ]; then
+        mkdir -p "$CONFIG_DIR"
+    fi
+
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "Initializing OpenCode configuration with plugins..."
+        # Create new config file
+        # Convert comma-separated string to JSON array
+        # Note: simplistic parsing, assumes no commas in plugin names
+        IFS=',' read -ra ADDR <<< "$PLUGINS"
+        JSON_ARRAY="["
+        FIRST=true
+        for i in "${ADDR[@]}"; do
+            # Trim whitespace
+            plugin=$(echo "$i" | xargs)
+            if [ -n "$plugin" ]; then
+                if [ "$FIRST" = true ]; then
+                    JSON_ARRAY="$JSON_ARRAY\"$plugin\""
+                    FIRST=false
+                else
+                    JSON_ARRAY="$JSON_ARRAY, \"$plugin\""
+                fi
+            fi
+        done
+        JSON_ARRAY="$JSON_ARRAY]"
+        
+        cat > "$CONFIG_FILE" <<EOF
+{
+  "\$schema": "https://opencode.ai/config.json",
+  "plugin": $JSON_ARRAY
+}
+EOF
+        echo "Created $CONFIG_FILE with plugins: $PLUGINS"
+    else
+        echo "OpenCode configuration already exists at $CONFIG_FILE. Skipping plugin auto-configuration to avoid overwrite."
+        echo "Please ensure the following plugins are in your config if needed: $PLUGINS"
+    fi
+fi
 
 validate_port() {
     local value="$1"
