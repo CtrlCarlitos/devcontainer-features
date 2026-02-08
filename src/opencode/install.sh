@@ -14,6 +14,7 @@ CORSORIGINS="${CORSORIGINS:-}"
 
 # Fixed install location (postStartCommand requires static path)
 BIN_DIR="/usr/local/bin"
+SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ============================================================================
 # Cleanup and Error Handling
@@ -159,7 +160,12 @@ install_native() {
         export XDG_BIN_DIR="$BIN_DIR"
 
         if [ "$VERSION" = "latest" ]; then
-            env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
+             echo "DEBUG: Running installer (latest)..."
+             if env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"; then
+                 echo "DEBUG: Installer finished successfully."
+             else
+                 echo "WARNING: Installer exited with code $?."
+             fi
         else
             # Note: Version pinning support varies by installer
             if ! env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" "$VERSION" 2>/dev/null; then
@@ -256,10 +262,14 @@ install_npm() {
 
 case "$INSTALLMETHOD" in
     native)
+        echo "DEBUG: Starting install_native"
         install_native
+        echo "DEBUG: Finished install_native"
         ;;
     npm)
+        echo "DEBUG: Starting install_npm"
         install_npm
+        echo "DEBUG: Finished install_npm"
         ;;
     *)
         echo "Unknown install method: $INSTALLMETHOD"
@@ -269,10 +279,12 @@ case "$INSTALLMETHOD" in
 esac
 
 # Verify installation
+echo "DEBUG: Verifying installation..."
 if ! verify_opencode_installation; then
     echo "ERROR: OpenCode installation failed"
     exit 1
 fi
+echo "DEBUG: Verification passed."
 
 echo "OpenCode installed successfully: $(opencode --version)"
 
@@ -339,6 +351,29 @@ update_rc_file() {
 
 update_rc_file "${REMOTE_USER_HOME}/.bashrc"
 update_rc_file "${REMOTE_USER_HOME}/.zshrc"
+
+
+
+# Plugin Installation (Optional)
+# ============================================================================
+# Automatic plugin installation during build is currently disabled due to
+if [ -n "$PLUGINS" ]; then
+    echo "Installing plugins: $PLUGINS"
+    if command -v npm >/dev/null 2>&1; then
+        IFS=',' read -ra PLUGIN_LIST <<< "$PLUGINS"
+        for plugin in "${PLUGIN_LIST[@]}"; do
+            # Trim whitespace
+            plugin=$(echo "$plugin" | xargs)
+            if [ -n "$plugin" ]; then
+                echo "Installing plugin: $plugin"
+                npm install -g "$plugin"
+            fi
+        done
+    else
+        echo "WARNING: npm is not installed. Skipping plugin installation."
+        echo "Plugins specified: $PLUGINS"
+    fi
+fi
 
 
 # Create the server startup script
@@ -571,8 +606,8 @@ if ! kill -0 "$SERVER_PID" 2>/dev/null; then
     cat "$LOG_FILE" >&2
     echo "---------------------------------------------------" >&2
     exit 1
-fi
-
+    fi
+    
 SERVERSCRIPT
 
 chmod +x "${BIN_DIR}/opencode-server-start.sh"
@@ -637,8 +672,9 @@ else
     echo "No server PID file found. Server may not be running."
 fi
 STOPSCRIPT
-
 chmod +x "${BIN_DIR}/opencode-server-stop"
+
+# Create server status script (rest of file)
 
 # Create status check script with health verification
 cat > "${BIN_DIR}/opencode-server-status" << 'STATUSSCRIPT'

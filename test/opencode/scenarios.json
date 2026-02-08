@@ -61,5 +61,18 @@
                 "serverPassword": "testpassword"
             }
         }
+    },
+    "plugins": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "ghcr.io/devcontainers/features/common-utils": {},
+            "node": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "plugins": "opencode-gemini-auth"
+            }
+        }
     }
 }
