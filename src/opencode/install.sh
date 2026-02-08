@@ -369,10 +369,37 @@ if [ -n "$PLUGINS" ]; then
                 npm install -g "$plugin"
             fi
         done
-    else
-        echo "WARNING: npm is not installed. Skipping plugin installation."
-        echo "Plugins specified: $PLUGINS"
     fi
+fi
+
+# ============================================================================
+# Ensure Permissions for Data Directories
+# ============================================================================
+# Pre-create XDG directories to ensure they have correct permissions
+# even when mounted as volumes (Docker creates missing mount points as root).
+if [ "$REMOTE_USER" != "root" ]; then
+    echo "Ensuring data directories exist with correct permissions for $REMOTE_USER..."
+    for subdir in ".config/opencode" ".local/share/opencode" ".cache/opencode" ".opencode"; do
+        FULL_PATH="${REMOTE_USER_HOME}/${subdir}"
+        if [ ! -d "$FULL_PATH" ]; then
+            echo "Creating $FULL_PATH"
+            mkdir -p "$FULL_PATH"
+        fi
+        
+        if [ "$(id -u)" = "0" ]; then
+            chown -R "$REMOTE_USER:$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)" "$FULL_PATH"
+        fi
+    done
+    
+    # Also ensure parent directories map back to user if created
+    # specifically .config, .local/share, .cache
+    for parent in ".config" ".local/share" ".local" ".cache"; do
+         P_PATH="${REMOTE_USER_HOME}/${parent}"
+         if [ -d "$P_PATH" ] && [ "$(stat -c '%u' "$P_PATH")" = "0" ]; then
+             echo "Fixing permissions for parent: $P_PATH"
+             chown "$REMOTE_USER:$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)" "$P_PATH"
+         fi
+    done
 fi
 
 
