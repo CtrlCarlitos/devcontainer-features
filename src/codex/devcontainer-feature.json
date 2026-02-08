@@ -7,7 +7,7 @@
     "options": {
         "version": {
             "type": "string",
-            "default": "latest",
+            "default": "0.98.0",
             "description": "Codex CLI version to install"
         },
         "installMethod": {
