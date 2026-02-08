@@ -28,7 +28,7 @@
             },
             "gemini-cli": {
                 "version": "latest",
-                "defaultModel": "gemini-1.5-pro"
+                "defaultModel": "gemini-3-pro-preview"
             }
         }
     }
