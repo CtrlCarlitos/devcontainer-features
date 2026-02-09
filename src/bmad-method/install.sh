@@ -11,7 +11,8 @@ validate_version() {
     local version="$1"
     # Empty version is allowed (will install latest via npm)
     [ -z "$version" ] && return 0
-    if [[ ! "$version" =~ ^(latest|stable|alpha|lts|[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?|[0-9]+\.[0-9]+|[0-9]+)$ ]]; then
+    # Supports: keywords, semver (X.Y.Z), semver with prerelease (X.Y.Z-Beta.5), major.minor, major
+    if [[ ! "$version" =~ ^(latest|stable|alpha|lts|[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?|[0-9]+\.[0-9]+|[0-9]+)$ ]]; then
         echo "ERROR: Invalid version format: $version"
         echo "Use 'latest', 'stable', 'alpha', 'lts', or a semver version (e.g., '1.2.3')"
         exit 1
