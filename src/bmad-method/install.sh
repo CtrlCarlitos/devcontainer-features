@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-VERSION="${VERSION:-6.0.0-Beta.5}"
+VERSION="${VERSION:-}"
 MIN_NODE_VERSION=20
 FEATURE_NAME="BMad Method"
 MAX_RETRIES=3
@@ -9,7 +9,9 @@ MAX_RETRIES=3
 # Validates version string format
 validate_version() {
     local version="$1"
-    if [[ ! "$version" =~ ^(latest|stable|alpha|lts|[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?|[0-9]+\.[0-9]+|[0-9]+)$ ]]; then
+    # Empty version is allowed (will install latest via npm)
+    [ -z "$version" ] && return 0
+    if [[ ! "$version" =~ ^(latest|stable|alpha|lts|[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?|[0-9]+\.[0-9]+|[0-9]+)$ ]]; then
         echo "ERROR: Invalid version format: $version"
         echo "Use 'latest', 'stable', 'alpha', 'lts', or a semver version (e.g., '1.2.3')"
         exit 1
@@ -100,7 +102,11 @@ echo "Installing BMad Method..."
 
 validate_version "$VERSION"
 
-if [ "$VERSION" = "stable" ] || [ "$VERSION" = "latest" ]; then
+if [ -z "$VERSION" ]; then
+    # Empty version means "use the latest default from devcontainer-feature.json"
+    # This allows devcontainer CLI to pass the configured default
+    npm_install_with_retry "bmad-method@latest"
+elif [ "$VERSION" = "stable" ] || [ "$VERSION" = "latest" ]; then
     npm_install_with_retry "bmad-method@latest"
 elif [ "$VERSION" = "alpha" ]; then
     npm_install_with_retry "bmad-method@alpha"
