@@ -131,6 +131,25 @@ volumes:
 
 > **Note:** Replace `/home/vscode` with `/home/node` or `/root` if using a different user.
 
+## Security
+
+### TLS Certificate Pinning
+
+Installers download binaries and packages from external URLs (e.g., `https://opencode.ai/install`, `https://claude.ai/install.sh`, `https://registry.npmjs.org/`). While HTTPS is used for all downloads, TLS certificate pinning is not implemented due to complexity and maintenance overhead.
+
+**Mitigation:**
+- Optional SHA256 hash verification is available for all downloads (configure via `*_SHA256` options)
+- For npm packages, `npm install` includes integrity verification
+- For production deployments, verify hashes before container builds
+
+### Supply Chain Security
+
+- GitHub Actions use version tags (e.g., `@v4`) rather than commit SHAs for easier maintenance
+- npm packages use `--ignore-scripts` to prevent postinstall script execution
+- All inputs are sanitized where possible (e.g., version parameters)
+
+For detailed security audits, see the [security-review](docs/security-review/) directory.
+
 ## License
 
 MIT

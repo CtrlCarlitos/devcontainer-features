@@ -1,6 +1,6 @@
 #!/bin/bash
-# Note: Uses set -e for error handling; consider set -euo pipefail for stricter behavior
-set -e
+# Strict error handling: exit on error, undefined variables, and pipe failures
+set -euo pipefail
 
 # Feature options
 VERSION="${VERSION:-latest}"
@@ -142,9 +142,9 @@ install_npm() {
     fi
 
     if [ "$VERSION" = "latest" ]; then
-        npm install -g @openai/codex
+        npm install -g --ignore-scripts @openai/codex
     else
-        npm install -g @openai/codex@"$VERSION"
+        npm install -g --ignore-scripts @openai/codex@"$VERSION"
     fi
 }
 
@@ -365,6 +365,8 @@ chown "$REMOTE_USER:$REMOTE_USER" "${CONFIG_DIR}/config.toml" 2>/dev/null || tru
 DEFAULTS_DIR="/usr/local/etc"
 DEFAULTS_FILE="${DEFAULTS_DIR}/codex-defaults"
 mkdir -p "$DEFAULTS_DIR"
+# Create empty defaults file (no secrets currently stored). File must exist for
+# conditional source checks in helper scripts, but is intentionally left empty.
 > "$DEFAULTS_FILE"
 DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true

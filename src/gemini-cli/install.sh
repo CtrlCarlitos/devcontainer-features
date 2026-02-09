@@ -89,9 +89,9 @@ fi
 
 # Install Gemini CLI via npm
 if [ "$VERSION" = "latest" ]; then
-    npm install -g @google/gemini-cli
+    npm install -g --ignore-scripts @google/gemini-cli
 else
-    npm install -g @google/gemini-cli@"$VERSION"
+    npm install -g --ignore-scripts @google/gemini-cli@"$VERSION"
 fi
 
 verify_gemini_installation() {

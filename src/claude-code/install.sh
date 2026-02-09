@@ -1,12 +1,17 @@
 #!/bin/bash
-# Note: Uses set -e for error handling; consider set -euo pipefail for stricter behavior
-set -e
+# Strict error handling: exit on error, undefined variables, and pipe failures
+set -euo pipefail
 
 # Feature options
 VERSION="${VERSION:-latest}"
 ENABLEMCPSERVER="${ENABLEMCPSERVER:-false}"
 AUTHMETHOD="${AUTHMETHOD:-none}"
 SKIPPERMISSIONS="${SKIPPERMISSIONS:-false}"
+
+# Sanitize version input to prevent shell injection
+if [ "$VERSION" != "latest" ]; then
+    VERSION=$(echo "$VERSION" | sed 's/[^a-zA-Z0-9._-]//g')
+fi
 
 # Claude Code supports only the native installer (npm is deprecated/unsupported).
 if [ -n "${INSTALLMETHOD:-}" ] && [ "${INSTALLMETHOD}" != "native" ]; then

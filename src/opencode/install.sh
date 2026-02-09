@@ -1,6 +1,6 @@
 #!/bin/bash
-# Note: Uses set -e for error handling; consider set -euo pipefail for stricter behavior
-set -e
+# Strict error handling: exit on error, undefined variables, and pipe failures
+set -euo pipefail
 
 # Feature options (passed as environment variables)
 VERSION="${VERSION:-latest}"
@@ -283,9 +283,9 @@ install_npm() {
     fi
 
     if [ "$VERSION" = "latest" ]; then
-        npm install -g opencode-ai@latest
+        npm install -g --ignore-scripts opencode-ai@latest
     else
-        npm install -g opencode-ai@"$VERSION"
+        npm install -g --ignore-scripts opencode-ai@"$VERSION"
     fi
 }
 
@@ -335,7 +335,8 @@ DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
 # Note: File is world-readable (644) because during container build, the target user
 # may not exist yet or be in a different group than root. This file contains
-# only configuration defaults (no secrets), so world-readable is acceptable.
+# configuration defaults including server password (when configured). World-readable
+# is acceptable as this is a development container environment with controlled access.
 chmod 644 "$DEFAULTS_FILE"
 
 

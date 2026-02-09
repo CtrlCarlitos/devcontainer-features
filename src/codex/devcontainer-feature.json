@@ -1,6 +1,6 @@
 {
     "id": "codex",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "name": "OpenAI Codex CLI",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/codex",
     "description": "Installs OpenAI Codex CLI with headless mode and MCP server support. Uses npm (the primary installation method recommended by OpenAI).",
