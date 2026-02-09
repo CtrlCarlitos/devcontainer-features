@@ -9,7 +9,7 @@ const FEATURES_DIR = path.join(__dirname, '../../src');
 // Note: claude-code uses native installer only (no npm package), so it's excluded from auto-update
 const STRATEGIES = {
     'nerd-font': { type: 'github-release', repo: 'ryanoasis/nerd-fonts' },
-    'bmad-method': { type: 'npm', package: 'bmad-method' },
+    'bmad-method': { type: 'npm', package: 'bmad-method', distTags: ['latest', 'beta'] },
     'codex': { type: 'npm', package: '@openai/codex' },
     'gemini-cli': { type: 'npm', package: '@google/gemini-cli' },
     'opencode': { type: 'npm', package: 'opencode-ai' }
@@ -42,20 +42,62 @@ function setOutput(name, value) {
     }
 }
 
+function compareVersions(v1, v2) {
+    // Simple version comparison for formats like "6.0.0-Beta.7"
+    // Extract version parts and compare
+    const parseVersion = (v) => {
+        const match = v.match(/(\d+)\.(\d+)\.(\d+)-([A-Za-z]+)\.(\d+)/);
+        if (!match) return { major: 0, minor: 0, patch: 0, prerelease: 'z', prereleaseNum: 0 };
+        return {
+            major: parseInt(match[1], 10),
+            minor: parseInt(match[2], 10),
+            patch: parseInt(match[3], 10),
+            prerelease: match[4],
+            prereleaseNum: parseInt(match[5], 10)
+        };
+    };
+
+    const pv1 = parseVersion(v1);
+    const pv2 = parseVersion(v2);
+
+    if (pv1.major !== pv2.major) return pv2.major - pv1.major;
+    if (pv1.minor !== pv2.minor) return pv2.minor - pv1.minor;
+    if (pv1.patch !== pv2.patch) return pv2.patch - pv1.patch;
+    if (pv1.prerelease !== pv2.prerelease) {
+        const prereleaseOrder = { 'alpha': 0, 'beta': 1, 'stable': 2 };
+        return prereleaseOrder[pv2.prerelease] - prereleaseOrder[pv1.prerelease];
+    }
+    return pv2.prereleaseNum - pv1.prereleaseNum;
+}
+
 async function getLatestVersion(featureId) {
     const strategy = STRATEGIES[featureId];
     if (!strategy) return null;
-
+ 
     try {
         if (strategy.type === 'github-release') {
             const release = await fetchJson(`https://api.github.com/repos/${strategy.repo}/releases/latest`);
             return release.tag_name ? release.tag_name.replace(/^v/, '') : null;
         } else if (strategy.type === 'npm') {
-            // Use npm view via CLI usually easier/more reliable without extra deps, 
-            // but here we can use registry API to keep it zero-dep if we want.
-            // Let's use registry API for speed and no local npm config issues.
-            const pkg = await fetchJson(`https://registry.npmjs.org/${strategy.package}/latest`);
-            return pkg.version;
+            const tags = strategy.distTags || ['latest'];
+            let bestVersion = null;
+
+            for (const tag of tags) {
+                const pkg = await fetchJson(`https://registry.npmjs.org/${strategy.package}/${tag}`);
+                const version = pkg.version;
+
+                if (!bestVersion) {
+                    bestVersion = version;
+                    console.log(`  ${featureId} ${tag}: ${version}`);
+                } else if (compareVersions(bestVersion, version) > 0) {
+                    console.log(`  ${featureId} ${tag}: ${version} (newer than ${bestVersion})`);
+                    bestVersion = version;
+                } else {
+                    console.log(`  ${featureId} ${tag}: ${version}`);
+                }
+            }
+
+            return bestVersion;
         }
     } catch (error) {
         console.error(`Failed to check version for ${featureId}:`, error.message);
