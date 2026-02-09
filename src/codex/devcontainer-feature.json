@@ -1,6 +1,6 @@
 {
     "id": "codex",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "name": "OpenAI Codex CLI",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/codex",
     "description": "Installs OpenAI Codex CLI with headless mode and MCP server support. Uses npm (the primary installation method recommended by OpenAI).",
@@ -35,11 +35,6 @@
             "default": "none",
             "description": "Preferred authentication method. 'api-key' uses OPENAI_API_KEY, 'chatgpt' uses browser OAuth, 'device-code' is experimental headless auth"
         },
-        "oauthPort": {
-            "type": "string",
-            "default": "1455",
-            "description": "Port for OAuth callback server (for SSH port forwarding)"
-        },
         "approvalMode": {
             "type": "string",
             "enum": [
@@ -59,18 +54,6 @@
             ],
             "default": "workspace-write",
             "description": "Sandbox mode for command execution"
-        }
-    },
-    "customizations": {
-        "vscode": {
-            "settings": {
-                "remote.portsAttributes": {
-                    "1455": {
-                        "label": "Codex OAuth",
-                        "onAutoForward": "silent"
-                    }
-                }
-            }
         }
     },
     "installsAfter": [

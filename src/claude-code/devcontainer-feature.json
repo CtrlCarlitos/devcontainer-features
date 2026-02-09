@@ -1,6 +1,6 @@
 {
     "id": "claude-code",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "name": "Claude Code",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/claude-code",
     "description": "Installs Claude Code AI coding assistant with headless mode and MCP server support. Uses the native installer (recommended by Anthropic).",
@@ -25,27 +25,10 @@
             "default": "none",
             "description": "Preferred authentication method. 'api-key' uses ANTHROPIC_API_KEY env var, 'oauth' requires browser"
         },
-        "oauthPort": {
-            "type": "string",
-            "default": "52780",
-            "description": "Port for OAuth callback server (for SSH port forwarding when using browser auth)"
-        },
         "skipPermissions": {
             "type": "boolean",
             "default": false,
             "description": "Run initial setup with --dangerously-skip-permissions for headless environments"
-        }
-    },
-    "customizations": {
-        "vscode": {
-            "settings": {
-                "remote.portsAttributes": {
-                    "52780": {
-                        "label": "Claude Code OAuth",
-                        "onAutoForward": "notify"
-                    }
-                }
-            }
         }
     },
     "installsAfter": [
