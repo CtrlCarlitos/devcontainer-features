@@ -333,7 +333,10 @@ mkdir -p "$DEFAULTS_DIR"
 } > "$DEFAULTS_FILE"
 DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
-chmod 640 "$DEFAULTS_FILE"
+# Note: File is world-readable (644) because during container build, the target user
+# may not exist yet or be in a different group than root. This file contains
+# only configuration defaults (no secrets), so world-readable is acceptable.
+chmod 644 "$DEFAULTS_FILE"
 
 
 # Create /etc/profile.d initialization script for interactive shells
