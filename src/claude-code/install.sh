@@ -6,8 +6,6 @@ set -e
 VERSION="${VERSION:-latest}"
 ENABLEMCPSERVER="${ENABLEMCPSERVER:-false}"
 AUTHMETHOD="${AUTHMETHOD:-none}"
-# Note: Default OAuth port 52780 may collide with other services. Users can configure via OAUTHPORT environment variable.
-OAUTHPORT="${OAUTHPORT:-52780}"
 SKIPPERMISSIONS="${SKIPPERMISSIONS:-false}"
 
 # Claude Code supports only the native installer (npm is deprecated/unsupported).
@@ -93,8 +91,6 @@ validate_port() {
     echo "WARNING: Invalid ${label} port '$value'. Using ${fallback}." >&2
     echo "$fallback"
 }
-
-OAUTHPORT="$(validate_port "$OAUTHPORT" "52780" "OAuth")"
 
 # Ensure bin directory exists
 mkdir -p "$BIN_DIR"
@@ -263,9 +259,7 @@ fi
 DEFAULTS_DIR="/usr/local/etc"
 DEFAULTS_FILE="${DEFAULTS_DIR}/claude-code-defaults"
 mkdir -p "$DEFAULTS_DIR"
-{
-    printf 'CLAUDE_CODE_OAUTH_PORT_DEFAULT=%q\n' "$OAUTHPORT"
-} > "$DEFAULTS_FILE"
+> "$DEFAULTS_FILE"
 DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
 chmod 644 "$DEFAULTS_FILE"
@@ -281,8 +275,6 @@ if [ -f "$DEFAULTS_FILE" ]; then
     . "$DEFAULTS_FILE"
 fi
 
-OAUTH_PORT="${CLAUDE_CODE_OAUTH_PORT:-${CLAUDE_CODE_OAUTH_PORT_DEFAULT:-52780}}"
-
 cat << EOF
 ================================================================================
 Claude Code Remote Authentication Guide
@@ -293,17 +285,13 @@ remote environment, follow these steps:
 
 METHOD 1: SSH Port Forwarding (Recommended for OAuth)
 ------------------------------------------------------
-1. From your LOCAL machine, connect with port forwarding:
-
-   ssh -L ${OAUTH_PORT}:localhost:${OAUTH_PORT} user@<container-host>
-
-2. In this container, run:
-
-   claude /login
-
-3. When prompted, open the URL in your LOCAL browser (it will use localhost)
-
-4. Complete the authentication in the browser
+1. Run 'claude /login' in this container
+2. Copy the OAuth URL that appears in the terminal
+3. Open the URL in your browser and note the port number in redirect_uri (e.g., http://localhost:39485/...)
+4. From your LOCAL machine, set up SSH port forwarding:
+   ssh -L <PORT>:localhost:<PORT> user@<container-host>
+5. Re-open the OAuth URL in your LOCAL browser
+6. Complete the authentication
 
 
 METHOD 2: API Key Authentication (Headless/CI)
@@ -326,8 +314,6 @@ If you've authenticated on another machine, you can copy the credentials:
 
 2. Copy this file to the same location in this container
 
-
-Current OAuth Port: ${OAUTH_PORT}
 ================================================================================
 EOF
 AUTHSCRIPT

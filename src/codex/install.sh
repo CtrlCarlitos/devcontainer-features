@@ -7,7 +7,6 @@ VERSION="${VERSION:-latest}"
 INSTALLMETHOD="${INSTALLMETHOD:-npm}"
 ENABLEMCPSERVER="${ENABLEMCPSERVER:-false}"
 AUTHMETHOD="${AUTHMETHOD:-none}"
-OAUTHPORT="${OAUTHPORT:-1455}"
 APPROVALMODE="${APPROVALMODE:-suggest}"
 SANDBOXMODE="${SANDBOXMODE:-workspace-write}"
 
@@ -116,7 +115,6 @@ normalize_sandbox_mode() {
     esac
 }
 
-OAUTHPORT="$(validate_port "$OAUTHPORT" "1455" "OAuth")"
 APPROVALMODE="$(normalize_approval_mode "$APPROVALMODE")"
 SANDBOXMODE="$(normalize_sandbox_mode "$SANDBOXMODE")"
 
@@ -367,9 +365,7 @@ chown "$REMOTE_USER:$REMOTE_USER" "${CONFIG_DIR}/config.toml" 2>/dev/null || tru
 DEFAULTS_DIR="/usr/local/etc"
 DEFAULTS_FILE="${DEFAULTS_DIR}/codex-defaults"
 mkdir -p "$DEFAULTS_DIR"
-{
-    printf 'CODEX_OAUTH_PORT_DEFAULT=%q\n' "$OAUTHPORT"
-} > "$DEFAULTS_FILE"
+> "$DEFAULTS_FILE"
 DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
 chmod 644 "$DEFAULTS_FILE"
@@ -384,8 +380,6 @@ if [ -f "$DEFAULTS_FILE" ]; then
     # shellcheck source=/usr/local/etc/codex-defaults
     . "$DEFAULTS_FILE"
 fi
-
-OAUTH_PORT="${CODEX_OAUTH_PORT:-${CODEX_OAUTH_PORT_DEFAULT:-1455}}"
 
 cat << EOF
 ================================================================================
@@ -413,7 +407,7 @@ METHOD 2: SSH Port Forwarding (For ChatGPT OAuth)
 -------------------------------------------------
 1. From your LOCAL machine, connect with port forwarding:
 
-   ssh -L ${OAUTH_PORT}:localhost:${OAUTH_PORT} user@<container-host>
+   ssh -L 1455:localhost:1455 user@<container-host>
 
 2. In this container, run:
 
@@ -435,8 +429,6 @@ METHOD 4: Copy Existing Credentials
 ------------------------------------
 If authenticated elsewhere, copy ~/.codex/auth.json to this container
 
-
-Current OAuth Port: ${OAUTH_PORT}
 ================================================================================
 EOF
 AUTHSCRIPT

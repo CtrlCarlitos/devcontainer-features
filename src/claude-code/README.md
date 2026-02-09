@@ -18,7 +18,6 @@ Installs Claude Code AI coding assistant with headless mode and MCP server suppo
 | version | Claude Code version to install (e.g., 'latest', '1.0.58') | string | latest |
 | enableMcpServer | Configure Claude Code to be available as an MCP server for other agents | boolean | false |
 | authMethod | Preferred authentication method. 'api-key' uses ANTHROPIC_API_KEY env var, 'oauth' requires browser | string | none |
-| oauthPort | Port for OAuth callback server (for SSH port forwarding when using browser auth) | string | 52780 |
 | skipPermissions | Run initial setup with --dangerously-skip-permissions for headless environments | boolean | false |
 
 
