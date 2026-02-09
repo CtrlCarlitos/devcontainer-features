@@ -1,6 +1,6 @@
 {
     "id": "opencode",
-    "version": "1.1.10",
+    "version": "1.1.11",
     "name": "OpenCode",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/opencode",
     "description": "Installs OpenCode AI coding agent with optional server mode for remote connections. Supports both native installer and npm.",
@@ -31,8 +31,8 @@
         },
         "serverHostname": {
             "type": "string",
-            "default": "0.0.0.0",
-            "description": "WARNING: Defaults to '0.0.0.0' (network-accessible). Set serverPassword for security, or use '127.0.0.1' for localhost-only access."
+            "default": "127.0.0.1",
+            "description": "Hostname to bind server to. Defaults to '127.0.0.1' (localhost-only). Set to '0.0.0.0' for network access (requires serverPassword for security)."
         },
         "serverPassword": {
             "type": "string",

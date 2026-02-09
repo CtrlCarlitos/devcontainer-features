@@ -8,7 +8,7 @@
     "ghcr.io/ctrlcarlitos/devcontainer-features/opencode:1": {
         "enableServer": true,
         "enableWebMode": true,
-        "serverHostname": "0.0.0.0",
+        "serverHostname": "0.0.0.0",  // Explicitly set for network access (default is 127.0.0.1 for security)
         "serverPassword": "your-secure-password",
         "corsOrigins": "opencode.localhost"
     }

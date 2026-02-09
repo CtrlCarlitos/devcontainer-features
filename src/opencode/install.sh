@@ -1,12 +1,14 @@
 #!/bin/bash
+# Note: Uses set -e for error handling; consider set -euo pipefail for stricter behavior
 set -e
 
 # Feature options (passed as environment variables)
 VERSION="${VERSION:-latest}"
 INSTALLMETHOD="${INSTALLMETHOD:-native}"
 ENABLESERVER="${ENABLESERVER:-false}"
+# Note: Default port 4096 may collide with other services. Users can configure via SERVERPORT environment variable.
 SERVERPORT="${SERVERPORT:-4096}"
-SERVERHOSTNAME="${SERVERHOSTNAME:-0.0.0.0}"
+SERVERHOSTNAME="${SERVERHOSTNAME:-127.0.0.1}"
 SERVERPASSWORD="${SERVERPASSWORD:-}"
 ENABLEMDNS="${ENABLEMDNS:-false}"
 ENABLEWEBMODE="${ENABLEWEBMODE:-false}"
@@ -102,16 +104,7 @@ mkdir -p "$BIN_DIR"
 echo "Installing OpenCode..."
 echo "Target user: $REMOTE_USER"
 echo "Target home: $REMOTE_USER_HOME"
-echo "Installing OpenCode..."
-echo "Target user: $REMOTE_USER"
-echo "Target home: $REMOTE_USER_HOME"
 echo "Install method: $INSTALLMETHOD"
-echo "Debug: SERVERPASSWORD length: ${#SERVERPASSWORD}"
-if [ -n "$SERVERPASSWORD" ]; then
-    echo "Debug: SERVERPASSWORD is set (masked)"
-else
-    echo "Debug: SERVERPASSWORD is empty"
-fi
 
 # ============================================================================
 # INSTALLATION METHOD: Native Installer (RECOMMENDED)
@@ -138,6 +131,51 @@ install_native() {
         exit 1
     fi
 
+    # Verify download integrity if hash is provided
+    verify_download() {
+        local file="$1"
+        local expected_hash="$2"
+        local algorithm="${3:-sha256}"
+
+        if [ -z "$expected_hash" ]; then
+            echo "INFO: No checksum provided. Skipping integrity verification." >&2
+            return 0
+        fi
+
+        local actual_hash
+        case "$algorithm" in
+            sha256)
+                actual_hash=$(sha256sum "$file" 2>/dev/null | cut -d' ' -f1)
+                ;;
+            sha1)
+                actual_hash=$(sha1sum "$file" 2>/dev/null | cut -d' ' -f1)
+                ;;
+            md5)
+                actual_hash=$(md5sum "$file" 2>/dev/null | cut -d' ' -f1)
+                ;;
+            *)
+                echo "ERROR: Unsupported hash algorithm: $algorithm" >&2
+                return 1
+                ;;
+        esac
+
+        if [ "$actual_hash" = "$expected_hash" ]; then
+            return 0
+        else
+            echo "ERROR: $algorithm checksum mismatch!" >&2
+            echo "  Expected: $expected_hash" >&2
+            echo "  Actual:   $actual_hash" >&2
+            exit 1
+        fi
+    }
+
+    # Optional: Set OPENCODE_SHA256 environment variable to verify integrity
+    if [ -n "${OPENCODE_SHA256:-}" ]; then
+        verify_download "$INSTALLER" "$OPENCODE_SHA256" sha256
+    else
+        echo "INFO: Set OPENCODE_SHA256 environment variable for download verification" >&2
+    fi
+
     chmod +x "$INSTALLER"
 
     if [ "$REMOTE_USER" != "root" ] && [ "$(whoami)" = "root" ]; then
@@ -160,12 +198,7 @@ install_native() {
         export XDG_BIN_DIR="$BIN_DIR"
 
         if [ "$VERSION" = "latest" ]; then
-             echo "DEBUG: Running installer (latest)..."
-             if env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"; then
-                 echo "DEBUG: Installer finished successfully."
-             else
-                 echo "WARNING: Installer exited with code $?."
-             fi
+            env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
         else
             # Note: Version pinning support varies by installer
             if ! env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" "$VERSION" 2>/dev/null; then
@@ -262,14 +295,10 @@ install_npm() {
 
 case "$INSTALLMETHOD" in
     native)
-        echo "DEBUG: Starting install_native"
         install_native
-        echo "DEBUG: Finished install_native"
         ;;
     npm)
-        echo "DEBUG: Starting install_npm"
         install_npm
-        echo "DEBUG: Finished install_npm"
         ;;
     *)
         echo "Unknown install method: $INSTALLMETHOD"
@@ -279,12 +308,10 @@ case "$INSTALLMETHOD" in
 esac
 
 # Verify installation
-echo "DEBUG: Verifying installation..."
 if ! verify_opencode_installation; then
     echo "ERROR: OpenCode installation failed"
     exit 1
 fi
-echo "DEBUG: Verification passed."
 
 echo "OpenCode installed successfully: $(opencode --version)"
 
@@ -292,9 +319,6 @@ echo "OpenCode installed successfully: $(opencode --version)"
 DEFAULTS_DIR="/usr/local/etc"
 DEFAULTS_FILE="${DEFAULTS_DIR}/opencode-defaults"
 mkdir -p "$DEFAULTS_DIR"
-
-echo "Debug: Writing defaults file..."
-echo "Debug: SERVERPASSWORD length before write: ${#SERVERPASSWORD}"
 
 {
     printf 'OPENCODE_ENABLE_SERVER_DEFAULT=%q\n' "$ENABLESERVER"
@@ -304,16 +328,12 @@ echo "Debug: SERVERPASSWORD length before write: ${#SERVERPASSWORD}"
     printf 'OPENCODE_SERVER_PASSWORD_DEFAULT="%s"\n' "$SERVERPASSWORD"
     printf 'OPENCODE_ENABLE_MDNS_DEFAULT=%q\n' "$ENABLEMDNS"
     printf 'OPENCODE_ENABLE_WEB_DEFAULT=%q\n' "$ENABLEWEBMODE"
-    printf 'OPENCODE_ENABLE_WEB_DEFAULT=%q\n' "$ENABLEWEBMODE"
     printf 'OPENCODE_CORS_ORIGINS_DEFAULT=%q\n' "$CORSORIGINS"
     printf 'OPENCODE_PLUGINS_DEFAULT=%q\n' "$PLUGINS"
 } > "$DEFAULTS_FILE"
 DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
-chmod 644 "$DEFAULTS_FILE"
-
-echo "Debug: Defaults file content (masked):"
-sed 's/PASSWORD_DEFAULT=.*/PASSWORD_DEFAULT=[MASKED]/' "$DEFAULTS_FILE"
+chmod 640 "$DEFAULTS_FILE"
 
 
 # Create /etc/profile.d initialization script for interactive shells
@@ -409,7 +429,7 @@ fi
 
 ENABLE_SERVER="${OPENCODE_ENABLE_SERVER:-${OPENCODE_ENABLE_SERVER_DEFAULT:-false}}"
 PORT="${OPENCODE_SERVER_PORT:-${OPENCODE_SERVER_PORT_DEFAULT:-4096}}"
-HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-0.0.0.0}}"
+HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-127.0.0.1}}"
 ENABLE_MDNS="${OPENCODE_ENABLE_MDNS:-${OPENCODE_ENABLE_MDNS_DEFAULT:-false}}"
 ENABLE_WEB="${OPENCODE_ENABLE_WEB:-${OPENCODE_ENABLE_WEB_DEFAULT:-false}}"
 CORS_ORIGINS="${OPENCODE_CORS_ORIGINS:-${OPENCODE_CORS_ORIGINS_DEFAULT:-}}"
@@ -438,6 +458,8 @@ if [ -n "$PLUGINS" ]; then
             # Trim whitespace
             plugin=$(echo "$i" | xargs)
             if [ -n "$plugin" ]; then
+                # Escape JSON special characters: backslash and double quote
+                plugin=$(printf '%s' "$plugin" | sed 's/\\/\\\\/g; s/"/\\"/g')
                 if [ "$FIRST" = true ]; then
                     JSON_ARRAY="$JSON_ARRAY\"$plugin\""
                     FIRST=false
@@ -447,7 +469,7 @@ if [ -n "$PLUGINS" ]; then
             fi
         done
         JSON_ARRAY="$JSON_ARRAY]"
-        
+
         cat > "$CONFIG_FILE" <<EOF
 {
   "\$schema": "https://opencode.ai/config.json",
@@ -478,9 +500,6 @@ PORT="$(validate_port "$PORT" "4096")"
 
 # Only start if server mode is enabled
 if [ "$ENABLE_SERVER" != "true" ]; then
-    if [ "$DEFAULTS_LOADED" = "true" ] || [ -n "$OPENCODE_ENABLE_SERVER" ]; then
-        echo "OpenCode server mode not enabled. Set enableServer: true to enable."
-    fi
     if [ "$DEFAULTS_LOADED" = "true" ] || [ -n "$OPENCODE_ENABLE_SERVER" ]; then
         echo "OpenCode server mode not enabled. Set enableServer: true to enable."
     fi
@@ -529,9 +548,17 @@ _get_pid_dir() {
 
 PID_DIR="$(_get_pid_dir)"
 PID_FILE="${PID_DIR}/opencode-server.pid"
+PID_LOCK_FILE="${PID_DIR}/opencode-server.lock"
 LOG_FILE="${PID_DIR}/opencode-server.log"
 
-# Prevent duplicate server instances
+# Prevent duplicate server instances using flock for atomic locking
+exec 200>"$PID_LOCK_FILE"
+if ! flock -n 200; then
+    echo "ERROR: Another instance of OpenCode server is starting. If this is stale, remove: $PID_LOCK_FILE" >&2
+    exit 1
+fi
+
+# Check PID file with proper locking
 if [ -f "$PID_FILE" ]; then
     PID="$(cat "$PID_FILE")"
     if kill -0 "$PID" 2>/dev/null; then
@@ -571,12 +598,15 @@ if [ -n "$CORS_ORIGINS" ]; then
             origin="http://${origin}"
         fi
 
-        # Validate: must start with http:// or https:// and contain only safe characters
-        if [[ "$origin" =~ ^https?://[a-zA-Z0-9._:-]+$ ]]; then
+        # Improved CORS origin validation
+        # Supports: IPv4 (http://1.2.3.4:8080), IPv6 (http://[::1]:8080), hostnames, trailing slashes
+        # Rejects suspicious characters
+        if [[ "$origin" =~ ^https?://(\[[0-9a-fA-F:]+\]|[a-zA-Z0-9._-]+)(:[0-9]+)?/?$ ]]; then
             ARGS+=(--cors "$origin")
         else
             echo "WARNING: Skipping invalid CORS origin: $origin" >&2
             echo "  CORS origins must be scheme://host[:port] format" >&2
+            echo "  Supports IPv4, IPv6, and hostnames" >&2
         fi
     done
 fi
@@ -588,8 +618,8 @@ if [ -n "$OPENCODE_SERVER_PASSWORD" ]; then
     echo "  Password: (set via OPENCODE_SERVER_PASSWORD)"
 else
     if [ "$HOSTNAME" = "0.0.0.0" ]; then
-        echo "WARNING: Server bound to 0.0.0.0 without authentication!"
-        echo "  Set OPENCODE_SERVER_PASSWORD for security, or use serverHostname: 127.0.0.1"
+        echo "WARNING: Server bound to 0.0.0.0. This exposes the server to all network interfaces."
+        echo "  Ensure OPENCODE_SERVER_PASSWORD is set for authentication!"
     fi
 fi
 
@@ -721,6 +751,14 @@ _get_pid_dir() {
 
 PID_DIR="$(_get_pid_dir)"
 PID_FILE="${PID_DIR}/opencode-server.pid"
+PID_LOCK_FILE="${PID_DIR}/opencode-server.lock"
+
+# Acquire lock for atomic PID file operations
+exec 200>"$PID_LOCK_FILE"
+flock -n 200 || {
+    echo "ERROR: Cannot acquire lock. Another operation is in progress." >&2
+    exit 1
+}
 
 if [ -f "$PID_FILE" ]; then
     PID=$(cat "$PID_FILE")
@@ -779,7 +817,7 @@ if [ -f "$DEFAULTS_FILE" ]; then
 fi
 
 PORT="${OPENCODE_SERVER_PORT:-${OPENCODE_SERVER_PORT_DEFAULT:-4096}}"
-HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-0.0.0.0}}"
+HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-127.0.0.1}}"
 
 # Ensure password is set from defaults if available
 if [ -z "$OPENCODE_SERVER_PASSWORD" ] && [ -n "$OPENCODE_SERVER_PASSWORD_DEFAULT" ]; then
@@ -883,6 +921,7 @@ else
         echo "NOTE: PID file missing. Server may have been started manually."
     else
         # Fallback: check process list
+        # Note: Pattern is intentionally hardcoded to avoid shell injection
         if pgrep -f "opencode.*(serve|web)" >/dev/null; then
              echo "Status: RUNNING (Verified via process list)"
              echo "Health: UNKNOWN (PID file missing, health check failed)"

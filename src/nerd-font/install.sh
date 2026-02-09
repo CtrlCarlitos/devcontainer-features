@@ -6,9 +6,14 @@ VERSION="${VERSION:-3.4.0}"
 FONTS="${FONTS:-Meslo}"
 MAX_RETRIES=3
 
+# Track temporary files created by this script
+TEMP_FILES=()
+
 # Cleanup temporary files on exit
 cleanup() {
-    rm -f /tmp/*.zip 2>/dev/null || true
+    for file in "${TEMP_FILES[@]}"; do
+        rm -f "$file" 2>/dev/null || true
+    done
 }
 trap cleanup EXIT
 
@@ -101,18 +106,28 @@ for FONT_NAME in "${FONT_LIST[@]}"; do
     fi
 
     echo "Processing font: $FONT_NAME"
-    FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v${VERSION}/${FONT_NAME}.zip"
+    # Sanitize VERSION to prevent path traversal
+    SAFE_VERSION=$(echo "$VERSION" | sed 's/[\/\\]/_/g; s/\.\./_/g')
+    FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v${SAFE_VERSION}/${FONT_NAME}.zip"
+
+    if [ "$SAFE_VERSION" != "$VERSION" ]; then
+        echo "WARNING: Version sanitized for security: '$VERSION' -> '$SAFE_VERSION'" >&2
+    fi
 
     # Download with retry
+    FONT_ZIP="/tmp/${FONT_NAME}-$$-${RANDOM}.zip"
+    TEMP_FILES+=("$FONT_ZIP")
     echo "Downloading ${FONT_NAME} from ${FONT_URL}..."
-    if ! curl_with_retry "$FONT_URL" "/tmp/${FONT_NAME}.zip"; then
+    if ! curl_with_retry "$FONT_URL" "$FONT_ZIP"; then
         echo "ERROR: Failed to download ${FONT_NAME}.zip. Check version and font name."
         exit 1
     fi
 
     echo "Extracting ${FONT_NAME}..."
-    unzip -o "/tmp/${FONT_NAME}.zip" -d "$FONT_DIR"
-    rm "/tmp/${FONT_NAME}.zip"
+    unzip -o "$FONT_ZIP" -d "$FONT_DIR"
+    rm -f "$FONT_ZIP"
+    # Remove from tracking since we already deleted it
+    TEMP_FILES=("${TEMP_FILES[@]/$FONT_ZIP}")
 done
 
 # Clean up generic junk usually in these zips

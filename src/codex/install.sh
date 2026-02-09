@@ -1,4 +1,5 @@
 #!/bin/bash
+# Note: Uses set -e for error handling; consider set -euo pipefail for stricter behavior
 set -e
 
 # Feature options

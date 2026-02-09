@@ -1,10 +1,12 @@
 #!/bin/bash
+# Note: Uses set -e for error handling; consider set -euo pipefail for stricter behavior
 set -e
 
 # Feature options
 VERSION="${VERSION:-latest}"
 ENABLEMCPSERVER="${ENABLEMCPSERVER:-false}"
 AUTHMETHOD="${AUTHMETHOD:-none}"
+# Note: Default OAuth port 52780 may collide with other services. Users can configure via OAUTHPORT environment variable.
 OAUTHPORT="${OAUTHPORT:-52780}"
 SKIPPERMISSIONS="${SKIPPERMISSIONS:-false}"
 
@@ -132,6 +134,51 @@ install_native() {
     if ! curl -fsSL https://claude.ai/install.sh -o "$INSTALLER"; then
         echo "ERROR: Failed to download Claude Code installer"
         exit 1
+    fi
+
+    # Verify download integrity if hash is provided
+    verify_download() {
+        local file="$1"
+        local expected_hash="$2"
+        local algorithm="${3:-sha256}"
+
+        if [ -z "$expected_hash" ]; then
+            echo "INFO: No checksum provided. Skipping integrity verification." >&2
+            return 0
+        fi
+
+        local actual_hash
+        case "$algorithm" in
+            sha256)
+                actual_hash=$(sha256sum "$file" 2>/dev/null | cut -d' ' -f1)
+                ;;
+            sha1)
+                actual_hash=$(sha1sum "$file" 2>/dev/null | cut -d' ' -f1)
+                ;;
+            md5)
+                actual_hash=$(md5sum "$file" 2>/dev/null | cut -d' ' -f1)
+                ;;
+            *)
+                echo "ERROR: Unsupported hash algorithm: $algorithm" >&2
+                return 1
+                ;;
+        esac
+
+        if [ "$actual_hash" = "$expected_hash" ]; then
+            return 0
+        else
+            echo "ERROR: $algorithm checksum mismatch!" >&2
+            echo "  Expected: $expected_hash" >&2
+            echo "  Actual:   $actual_hash" >&2
+            exit 1
+        fi
+    }
+
+    # Optional: Set CLAUDE_SHA256 environment variable to verify integrity
+    if [ -n "${CLAUDE_SHA256:-}" ]; then
+        verify_download "$INSTALLER" "$CLAUDE_SHA256" sha256
+    else
+        echo "INFO: Set CLAUDE_SHA256 environment variable for download verification" >&2
     fi
 
     chmod +x "$INSTALLER"
