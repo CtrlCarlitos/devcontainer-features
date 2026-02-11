@@ -33,7 +33,7 @@ jobs:
 
       - name: Generate Docs
         if: steps.check.outputs.updated == 'true'
-        run: devcontainer features generate-docs --project-folder .
+        run: devcontainer features generate-docs --project-folder . --namespace CtrlCarlitos/devcontainer-features
 
       - name: Run Tests
         if: steps.check.outputs.updated == 'true'
