@@ -46,14 +46,15 @@ function compareVersions(v1, v2) {
     // Simple version comparison for formats like "6.0.0-Beta.7"
     // Extract version parts and compare
     const parseVersion = (v) => {
-        const match = v.match(/(\d+)\.(\d+)\.(\d+)-([A-Za-z]+)\.(\d+)/);
+        const match = v.match(/^(\d+)\.(\d+)\.(\d+)(?:-([A-Za-z]+)\.(\d+))?$/);
         if (!match) return { major: 0, minor: 0, patch: 0, prerelease: 'z', prereleaseNum: 0 };
         return {
             major: parseInt(match[1], 10),
             minor: parseInt(match[2], 10),
             patch: parseInt(match[3], 10),
-            prerelease: match[4],
-            prereleaseNum: parseInt(match[5], 10)
+            // If no prerelease processing happened, assume stable 'z' sort order
+            prerelease: match[4] || 'stable',
+            prereleaseNum: match[5] ? parseInt(match[5], 10) : 0
         };
     };
 
@@ -73,7 +74,7 @@ function compareVersions(v1, v2) {
 async function getLatestVersion(featureId) {
     const strategy = STRATEGIES[featureId];
     if (!strategy) return null;
- 
+
     try {
         if (strategy.type === 'github-release') {
             const release = await fetchJson(`https://api.github.com/repos/${strategy.repo}/releases/latest`);

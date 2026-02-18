@@ -16,7 +16,7 @@ Installs Nerd Fonts (e.g. Meslo, FiraCode) and updates font cache.
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
 | fonts | Comma-separated list of fonts to install (e.g. 'Meslo,FiraCode,JetBrainsMono'). Must match the Nerd Fonts release zip filenames. | string | Meslo |
-| version | Version of Nerd Fonts to install (e.g. '3.4.0', '3.1.1') | string | 3.4.0 |
+| version | Version of Nerd Fonts to install (e.g. '3.4.0', '3.1.1') | string | latest |
 
 # Additional Notes for Nerd Font Feature
 
