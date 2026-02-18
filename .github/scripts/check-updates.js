@@ -144,6 +144,18 @@ async function updateFeatures() {
 
             console.log(`Update available for ${feature}: ${currentDefault} -> ${latest}`);
             featureJson.options.version.default = latest;
+
+            // Bump the feature version (patch increment)
+            if (featureJson.version) {
+                const vParts = featureJson.version.split('.').map(Number);
+                if (vParts.length === 3 && !vParts.some(isNaN)) {
+                    vParts[2]++; // Increment patch
+                    const newVersion = vParts.join('.');
+                    console.log(`  Bumping feature version: ${featureJson.version} -> ${newVersion}`);
+                    featureJson.version = newVersion;
+                }
+            }
+
             fs.writeFileSync(featureJsonPath, JSON.stringify(featureJson, null, 4));
             updated = true;
         } else if (latest) {

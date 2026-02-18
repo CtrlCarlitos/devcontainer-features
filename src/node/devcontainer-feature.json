@@ -1,6 +1,6 @@
 {
     "id": "node",
-    "version": "1.0.3",
+    "version": "1.3.0",
     "name": "Node.js",
     "description": "Installs Node.js via nvm if not already present. Skips installation if Node.js is detected.",
     "options": {
