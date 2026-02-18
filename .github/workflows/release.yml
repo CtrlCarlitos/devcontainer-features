@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,3 +54,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag ${{ steps.version.outputs.tag }}
           git push origin ${{ steps.version.outputs.tag }}
+
+      - name: Trigger Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run publish.yml --ref ${{ steps.version.outputs.tag }}
