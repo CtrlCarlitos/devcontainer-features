@@ -1,4 +1,4 @@
-name: Publish Dev Container Features
+name: Publish
 
 on:
   push:

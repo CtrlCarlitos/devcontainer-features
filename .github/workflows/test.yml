@@ -1,4 +1,4 @@
-name: Test Dev Container Features
+name: Test
 
 on:
   push:
