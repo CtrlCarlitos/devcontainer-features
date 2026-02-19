@@ -41,6 +41,7 @@ jobs:
 
       - name: Create Pull Request
         if: steps.check.outputs.updated == 'true'
+        id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "chore: auto-update feature versions"
@@ -49,3 +50,12 @@ jobs:
           branch: "chore/auto-update"
           delete-branch: true
           labels: "automation"
+          signoff: true
+          reviewers: ${{ github.repository_owner }}
+          assignees: ${{ github.repository_owner }}
+
+      - name: Enable Pull Request Automerge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        run: gh pr merge --auto --merge "${{ steps.cpr.outputs.pull-request-number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
