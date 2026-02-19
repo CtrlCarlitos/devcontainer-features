@@ -1,13 +1,13 @@
 {
     "id": "claude-code",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "name": "Claude Code",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/claude-code",
     "description": "Installs Claude Code AI coding assistant with headless mode and MCP server support. Uses the native installer (recommended by Anthropic).",
     "options": {
         "version": {
             "type": "string",
-            "default": "2.1.37",
+            "default": "2.1.47",
             "description": "Claude Code version to install (e.g., 'latest', '1.0.58')"
         },
         "enableMcpServer": {
