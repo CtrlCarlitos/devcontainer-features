@@ -1,6 +1,6 @@
 {
     "id": "nerd-font",
-    "version": "1.3.3",
+    "version": "1.3.4",
     "name": "Nerd Font",
     "documentationURL": "https://github.com/ryanoasis/nerd-fonts",
     "description": "Installs Nerd Fonts (e.g. Meslo, FiraCode) and updates font cache.",

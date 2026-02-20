@@ -4,7 +4,7 @@ set -euo pipefail
 FONT_DIR="/usr/local/share/fonts"
 VERSION="${VERSION:-3.4.0}"
 FONTS="${FONTS:-Meslo}"
-MAX_RETRIES=3
+MAX_RETRIES=5
 
 # Track temporary files created by this script
 TEMP_FILES=()
@@ -43,7 +43,7 @@ curl_with_retry() {
 
     while [ $attempt -le $MAX_RETRIES ]; do
         echo "Downloading (attempt $attempt/$MAX_RETRIES)..."
-        if curl -fsSL -o "$output" "$url"; then
+        if curl -fsSL --retry 3 --retry-delay 2 --retry-connrefused -o "$output" "$url"; then
             return 0
         fi
         if [ $attempt -lt $MAX_RETRIES ]; then
@@ -66,7 +66,7 @@ echo "Installing Nerd Fonts (Version: ${VERSION})..."
 require_apt
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends unzip fontconfig curl
+apt-get install -y --no-install-recommends unzip fontconfig curl ca-certificates
 rm -rf /var/lib/apt/lists/*
 
 # Create directory
