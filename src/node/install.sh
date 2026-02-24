@@ -109,8 +109,24 @@ rm -f "$NVM_INSTALLER"
 # Load nvm
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-# Install requested Node.js version
-nvm install "$VERSION"
+# Install requested Node.js version with retry
+MAX_RETRIES=3
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if nvm install "$VERSION"; then
+        break
+    else
+        echo "nvm install failed, retrying in 3 seconds..."
+        RETRY_COUNT=$((RETRY_COUNT+1))
+        sleep 3
+    fi
+done
+
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    echo "ERROR: Failed to install Node.js $VERSION after $MAX_RETRIES attempts."
+    exit 1
+fi
+
 nvm alias default "$VERSION"
 nvm use default
 
