@@ -1,13 +1,13 @@
 {
     "id": "gemini-cli",
-    "version": "1.3.4",
+    "version": "1.3.5",
     "name": "Gemini CLI",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/gemini-cli",
     "description": "Installs Google Gemini CLI with headless mode support for scripting and automation. Uses npm (the only supported installation method by Google).",
     "options": {
         "version": {
             "type": "string",
-            "default": "0.29.5",
+            "default": "0.29.7",
             "description": "Gemini CLI version to install (e.g., 'latest', 'preview', or specific version)"
         },
         "authMethod": {
