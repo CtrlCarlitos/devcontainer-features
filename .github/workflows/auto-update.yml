@@ -52,7 +52,6 @@ jobs:
           delete-branch: true
           labels: "automation"
           signoff: true
-          reviewers: ${{ github.repository_owner }}
           assignees: ${{ github.repository_owner }}
 
       - name: Enable Pull Request Automerge
