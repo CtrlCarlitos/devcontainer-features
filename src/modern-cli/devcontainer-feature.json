@@ -1,0 +1,8 @@
+{
+    "id": "modern-cli",
+    "version": "1.0.0",
+    "name": "Modern CLI Tools",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/modern-cli",
+    "description": "Installs a curated set of modern CLI tools: bat, eza, fd, ripgrep, delta, fzf, jq, duf. Uses apt where available, falls back to pinned GitHub release downloads.",
+    "options": {}
+}

@@ -1,0 +1,23 @@
+{
+    "id": "playwright",
+    "version": "1.0.0",
+    "name": "Playwright",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/playwright",
+    "description": "Installs Playwright globally plus the Chromium browser — browser automation for AI agents (scraping, testing, end-to-end flows).",
+    "options": {
+        "browser": {
+            "type": "string",
+            "enum": [
+                "chromium",
+                "firefox",
+                "webkit"
+            ],
+            "default": "chromium",
+            "description": "Which browser engine to install"
+        }
+    },
+    "installsAfter": [],
+    "containerEnv": {
+        "PLAYWRIGHT_BROWSERS_PATH": "/usr/local/share/ms-playwright"
+    }
+}

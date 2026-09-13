@@ -1,0 +1,8 @@
+{
+    "id": "serena",
+    "version": "1.0.0",
+    "name": "Serena Agent",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/serena",
+    "description": "Installs Serena — an MCP toolkit giving coding agents semantic code awareness (navigation, search, editing) over 40+ languages via LSP.",
+    "options": {}
+}

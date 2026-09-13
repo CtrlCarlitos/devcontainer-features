@@ -1,0 +1,8 @@
+{
+    "default": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": "latest"
+        }
+    }
+}

@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["Test"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  tag-release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate Next Version
+        id: version
+        run: |
+          # Get current date components
+          YEAR=$(date +'%Y')
+          MONTH=$(date +'%-m')
+          
+          # Base tag prefix for this month: vYYYY.M.
+          PREFIX="v${YEAR}.${MONTH}."
+          
+          # Find existing tags matching this prefix
+          EXISTING_TAGS=$(git tag --list "${PREFIX}*" | sort -V)
+          
+          if [ -z "$EXISTING_TAGS" ]; then
+            # No tags for this month, start at 1
+            NEXT_TAG="${PREFIX}1"
+          else
+            # Get the last tag and increment the counter
+            LAST_TAG=$(echo "$EXISTING_TAGS" | tail -n 1)
+            # Extract the last number
+            LAST_NUM=${LAST_TAG##*.}
+            NEXT_NUM=$((LAST_NUM + 1))
+            NEXT_TAG="${PREFIX}${NEXT_NUM}"
+          fi
+          
+          echo "Next tag: $NEXT_TAG"
+          echo "tag=$NEXT_TAG" >> $GITHUB_OUTPUT
+
+      - name: Push Tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.version.outputs.tag }}
+          git push origin ${{ steps.version.outputs.tag }}
+
+      - name: Trigger Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run publish.yml --ref ${{ steps.version.outputs.tag }}

@@ -1,0 +1,9 @@
+{
+    "id": "graft",
+    "version": "1.0.0",
+    "name": "Graft",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/graft",
+    "description": "Installs Graft — a codebase context graph (@nanonets/graft) that pre-indexes every symbol and call edge so agents navigate code with massive token savings.",
+    "options": {},
+    "installsAfter": []
+}

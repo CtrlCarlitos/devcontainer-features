@@ -1,0 +1,65 @@
+{
+    "id": "codex",
+    "version": "1.3.12",
+    "name": "OpenAI Codex CLI",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/codex",
+    "description": "Installs OpenAI Codex CLI with headless mode and MCP server support. Uses npm (the primary installation method recommended by OpenAI).",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "0.130.0",
+            "description": "Codex CLI version to install"
+        },
+        "installMethod": {
+            "type": "string",
+            "enum": [
+                "npm",
+                "binary"
+            ],
+            "default": "npm",
+            "description": "Installation method. 'npm' is primary method (recommended), 'binary' downloads from GitHub releases"
+        },
+        "enableMcpServer": {
+            "type": "boolean",
+            "default": false,
+            "description": "Configure Codex to be available as an MCP server for other agents"
+        },
+        "authMethod": {
+            "type": "string",
+            "enum": [
+                "api-key",
+                "chatgpt",
+                "device-code",
+                "none"
+            ],
+            "default": "none",
+            "description": "Preferred authentication method. 'api-key' uses OPENAI_API_KEY, 'chatgpt' uses browser OAuth, 'device-code' is experimental headless auth"
+        },
+        "approvalMode": {
+            "type": "string",
+            "enum": [
+                "suggest",
+                "auto",
+                "full-auto"
+            ],
+            "default": "suggest",
+            "description": "Default approval mode: 'suggest' (review all), 'auto' (auto-approve safe), 'full-auto' (no prompts)"
+        },
+        "sandboxMode": {
+            "type": "string",
+            "enum": [
+                "workspace-write",
+                "full-access",
+                "read-only"
+            ],
+            "default": "workspace-write",
+            "description": "Sandbox mode for command execution"
+        }
+    },
+    "installsAfter": [
+        "./node",
+        "ghcr.io/ctrlcarlitos/devcontainer-features/node",
+        "ghcr.io/devcontainers/features/node",
+        "ghcr.io/devcontainers/features/common-utils"
+    ]
+}

@@ -1,0 +1,82 @@
+{
+    "id": "opencode",
+    "version": "1.3.16",
+    "name": "OpenCode",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/opencode",
+    "description": "Installs OpenCode AI coding agent with optional server mode for remote connections. Supports both native installer and npm.",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "1.15.0",
+            "description": "OpenCode version to install (e.g., 'latest', '1.0.0')"
+        },
+        "installMethod": {
+            "type": "string",
+            "enum": [
+                "native",
+                "npm"
+            ],
+            "default": "native",
+            "description": "Installation method. 'native' uses official curl installer, 'npm' installs opencode-ai package"
+        },
+        "enableServer": {
+            "type": "boolean",
+            "default": false,
+            "description": "Automatically start OpenCode server on container start for remote access"
+        },
+        "serverPort": {
+            "type": "string",
+            "default": "4096",
+            "description": "Port for OpenCode server (default: 4096)"
+        },
+        "serverHostname": {
+            "type": "string",
+            "default": "127.0.0.1",
+            "description": "Hostname to bind server to. Defaults to '127.0.0.1' (localhost-only). Set to '0.0.0.0' for network access (requires serverPassword for security)."
+        },
+        "serverPassword": {
+            "type": "string",
+            "default": "",
+            "description": "Password for OpenCode server authentication (recommended when exposing to network)"
+        },
+        "enableMdns": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable mDNS service discovery (advertises as opencode.local on network)"
+        },
+        "enableWebMode": {
+            "type": "boolean",
+            "default": false,
+            "description": "Start with web interface instead of headless server mode"
+        },
+        "corsOrigins": {
+            "type": "string",
+            "default": "",
+            "description": "Comma-separated list of additional CORS origins (e.g., 'http://localhost:3000,https://app.example.com')"
+        },
+        "plugins": {
+            "type": "string",
+            "default": "",
+            "description": "Comma separated list of npm plugins to install (e.g. opencode-gemini-auth)"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "remote.portsAttributes": {
+                    "4096": {
+                        "label": "OpenCode Server",
+                        "onAutoForward": "notify",
+                        "protocol": "http"
+                    }
+                }
+            }
+        }
+    },
+    "postStartCommand": "/usr/local/bin/opencode-server-start.sh",
+    "installsAfter": [
+        "./node",
+        "ghcr.io/ctrlcarlitos/devcontainer-features/node",
+        "ghcr.io/devcontainers/features/common-utils"
+    ]
+}

@@ -1,0 +1,84 @@
+{
+    "default": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": {
+                "version": "22"
+            },
+            "opencode": "latest"
+        }
+    },
+    "npm-install": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "installMethod": "npm"
+            }
+        }
+    },
+    "server-enabled": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "enableServer": true,
+                "serverHostname": "127.0.0.1",
+                "serverPort": "4096",
+                "corsOrigins": "http://localhost:3000,https://example.com"
+            }
+        }
+    },
+    "invalid-port": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "serverPort": "notaport"
+            }
+        }
+    },
+    "server-password": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "ghcr.io/devcontainers/features/common-utils": {},
+            "runtime_core": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "enableServer": true,
+                "serverHostname": "0.0.0.0",
+                "serverPassword": "testpassword"
+            }
+        }
+    },
+    "plugins": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "ghcr.io/devcontainers/features/common-utils": {},
+            "runtime_core": {
+                "version": "22"
+            },
+            "opencode": {
+                "version": "latest",
+                "plugins": "opencode-gemini-auth"
+            }
+        }
+    },
+    "permissions": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "opencode": "latest"
+        }
+    }
+}

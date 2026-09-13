@@ -1,0 +1,11 @@
+{
+    "id": "antigravity-cli",
+    "version": "1.0.0",
+    "name": "Antigravity CLI (agy)",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/antigravity-cli",
+    "description": "Installs the Antigravity CLI (agy) — Google's terminal/headless AI agent surface. Replaces the retired Gemini CLI.",
+    "options": {},
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/node"
+    ]
+}
