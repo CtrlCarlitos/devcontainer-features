@@ -76,7 +76,6 @@
     "postStartCommand": "/usr/local/bin/opencode-server-start.sh",
     "installsAfter": [
         "./runtime_core",
-        "ghcr.io/ctrlcarlitos/devcontainer-features/runtime_core",
         "ghcr.io/devcontainers/features/common-utils"
     ]
 }
