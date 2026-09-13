@@ -287,6 +287,16 @@ install_npm() {
     else
         npm install -g --ignore-scripts opencode-ai@"$VERSION"
     fi
+
+    # opencode-ai needs its postinstall to download the platform binary;
+    # run it explicitly instead of granting npm blanket script execution.
+    local pkg_dir="$(npm prefix -g)/lib/node_modules/opencode-ai"
+    if [ -f "$pkg_dir/postinstall.mjs" ]; then
+        (cd "$pkg_dir" && node postinstall.mjs)
+    else
+        echo "ERROR: opencode-ai postinstall.mjs not found at $pkg_dir"
+        exit 1
+    fi
 }
 
 # ============================================================================

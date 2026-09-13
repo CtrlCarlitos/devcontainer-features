@@ -57,8 +57,7 @@
         }
     },
     "installsAfter": [
-        "./node",
-        "ghcr.io/ctrlcarlitos/devcontainer-features/node",
+        "./runtime_core",
         "ghcr.io/devcontainers/features/node",
         "ghcr.io/devcontainers/features/common-utils"
     ]
