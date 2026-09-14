@@ -7,7 +7,7 @@
     "options": {
         "skills": {
             "type": "string",
-            "default": "vercel-labs/skills:find-skills,vercel-labs/agent-browser:agent-browser,anthropics/skills:skill-creator,mattpocock/skills:writing-great-skills",
+            "default": "vercel-labs/skills:find-skills,vercel-labs/agent-browser:agent-browser,anthropics/skills:skill-creator,mattpocock/skills:writing-for-agents",
             "description": "Comma-separated skills as owner/repo:skill-name"
         },
         "agents": {

@@ -11,7 +11,7 @@ else
     exit 1
 fi
 
-for skill in find-skills agent-browser skill-creator writing-great-skills; do
+for skill in find-skills agent-browser skill-creator writing-for-agents; do
     if [ -f "$REMOTE_USER_HOME/.claude/skills/$skill/SKILL.md" ]; then
         echo "✓ ~/.claude/skills/$skill present"
     else

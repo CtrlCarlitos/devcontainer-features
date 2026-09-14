@@ -3,7 +3,7 @@ set -e
 echo "Testing curated-skills (default)..."
 
 REMOTE_USER_HOME="${_REMOTE_USER_HOME:-/home/vscode}"
-EXPECTED="find-skills agent-browser skill-creator writing-great-skills"
+EXPECTED="find-skills agent-browser skill-creator writing-for-agents"
 
 for skill in $EXPECTED; do
     if [ -f "$REMOTE_USER_HOME/.agents/skills/$skill/SKILL.md" ]; then
