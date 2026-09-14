@@ -42,6 +42,21 @@ function setOutput(name, value) {
     }
 }
 
+function syncNerdFontInstallFallback(version) {
+    const installPath = path.join(FEATURES_DIR, 'nerd-font', 'install.sh');
+    const installScript = fs.readFileSync(installPath, 'utf8');
+    const updatedScript = installScript.replace(
+        /^VERSION="\$\{VERSION:-[^}]+\}"$/m,
+        'VERSION="${VERSION:-' + version + '}"'
+    );
+
+    if (updatedScript === installScript) {
+        throw new Error('Could not update Nerd Font install.sh fallback version');
+    }
+
+    fs.writeFileSync(installPath, updatedScript);
+}
+
 function compareVersions(v1, v2) {
     // Simple version comparison for formats like "6.0.0-Beta.7"
     // Extract version parts and compare
@@ -144,6 +159,10 @@ async function updateFeatures() {
 
             console.log(`Update available for ${feature}: ${currentDefault} -> ${latest}`);
             featureJson.options.version.default = latest;
+
+            if (feature === 'nerd-font') {
+                syncNerdFontInstallFallback(latest);
+            }
 
             // Bump the feature version (patch increment)
             if (featureJson.version) {
