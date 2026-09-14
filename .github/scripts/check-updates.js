@@ -9,9 +9,7 @@ const FEATURES_DIR = path.join(__dirname, '../../src');
 // Note: claude-code uses native installer only (no npm package), so it's excluded from auto-update
 const STRATEGIES = {
     'nerd-font': { type: 'github-release', repo: 'ryanoasis/nerd-fonts' },
-    'bmad-method': { type: 'npm', package: 'bmad-method', distTags: ['latest', 'beta'] },
     'codex': { type: 'npm', package: '@openai/codex' },
-    'gemini-cli': { type: 'npm', package: '@google/gemini-cli' },
     'opencode': { type: 'npm', package: 'opencode-ai' }
 };
 
