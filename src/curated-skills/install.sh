@@ -34,8 +34,8 @@ valid_name() {
 # Parse entries: "owner/repo:skill" installs as-is (grouped by repo);
 # "owner/repo:skill>local-name" stages a renamed copy to dodge name
 # collisions with the user's own commands/skills.
-declare -A REPO_SKILLS
-declare -a RENAMED
+declare -A REPO_SKILLS=()
+RENAMED=()
 IFS=',' read -ra SKILL_LIST <<< "$SKILLS"
 for entry in "${SKILL_LIST[@]}"; do
     entry="${entry//[[:space:]]/}"
