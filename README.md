@@ -99,6 +99,7 @@ Claude Code, Codex, and OpenCode store authentication, configuration, and data t
 | OpenCode | `~/.config/opencode` | `~/.local/share/opencode` | `~/.cache/opencode` | 3 |
 | Claude Code | `~/.claude/` | N/A | N/A | 1 |
 | Codex | `~/.codex/` | `~/.local/share/codex/` | `~/.cache/codex/` | 3 |
+| Antigravity CLI | `~/.Antigravity/` | `~/.local/share/Antigravity-cli/` | `~/.cache/Antigravity-cli/` | 3 |
 
 ### Complete docker-compose.yml Example
 
@@ -118,6 +119,11 @@ services:
       - codex_data:/home/vscode/.local/share/codex
       - codex_cache:/home/vscode/.cache/codex
 
+      # Antigravity CLI
+      - antigravity_config:/home/vscode/.Antigravity
+      - antigravity_data:/home/vscode/.local/share/Antigravity-cli
+      - antigravity_cache:/home/vscode/.cache/Antigravity-cli
+
       # OpenCode
       - opencode_config:/home/vscode/.config/opencode
       - opencode_data:/home/vscode/.local/share/opencode
@@ -131,6 +137,9 @@ volumes:
   codex_config:
   codex_data:
   codex_cache:
+  antigravity_config:
+  antigravity_data:
+  antigravity_cache:
   opencode_config:
   opencode_data:
   opencode_cache:
