@@ -10,9 +10,14 @@ This repository provides a small set of Dev Container Features for AI tooling an
 | `claude-code` | Anthropic's Claude Code CLI | 18+ |
 | `opencode` | OpenCode AI terminal agent | 18+ |
 | `antigravity-cli` | Antigravity CLI (agy) | 20+ |
-| `bmad-method` | BMad Agile AI framework | 20+ |
 | `codex` | OpenAI's Codex CLI | 22+ |
+| `curated-skills` | Curated agent skills via the `skills` CLI (find-skills, agent-browser, skill-creator, writing-for-agents) | 18+ |
+| `graft` | Codebase context graph (@nanonets/graft) | 18+ |
+| `guardrail` | Agent guardrails binary (checksum-verified) | - |
+| `modern-cli` | bat, eza, fd, ripgrep, delta, fzf, jq, duf | - |
 | `nerd-font` | Nerd Fonts (Meslo, etc.) | - |
+| `playwright` | Headless Chromium for agent automation | - |
+| `serena` | MCP semantic code toolkit via uv | - |
 
 ## Node.js Version Requirements
 
@@ -21,10 +26,11 @@ The `runtime_core` feature defaults to **v22**, which satisfies all feature requ
 ```
 runtime_core (default: 22)
     ├── codex (requires 22+) ✅
-    ├── bmad-method (requires 20+) ✅
-    ├── antigravity-cli (self-contained) ✅
+    ├── antigravity-cli (requires 20+) ✅
     ├── claude-code (requires 18+) ✅
-    └── opencode (requires 18+) ✅
+    ├── opencode (requires 18+) ✅
+    ├── curated-skills (requires npx, 18+) ✅
+    └── graft (npm install) ✅
 ```
 
 Each feature validates its minimum Node.js version and fails with a helpful error if not met.
@@ -84,7 +90,7 @@ This repository uses a **Release Train** model to decouple feature updates from 
 
 ## Docker Volume Mounts for AI Tools
 
-All AI tools (Claude Code, Codex, Gemini CLI, OpenCode) store authentication, configuration, and data that should persist across container rebuilds. See [DOCKER_VOLUMES.md](DOCKER_VOLUMES.md) for detailed volume mount configurations.
+All AI tools (Claude Code, Codex, Antigravity CLI, OpenCode) store authentication, configuration, and data that should persist across container rebuilds. See [DOCKER_VOLUMES.md](DOCKER_VOLUMES.md) for detailed volume mount configurations.
 
 ### Quick Reference
 

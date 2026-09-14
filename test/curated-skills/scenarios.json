@@ -1,0 +1,33 @@
+{
+    "default": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": {
+                "version": "22"
+            },
+            "curated-skills": "latest"
+        }
+    },
+    "single-skill": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": {
+                "version": "22"
+            },
+            "curated-skills": {
+                "skills": "vercel-labs/skills:find-skills"
+            }
+        }
+    },
+    "claude-only": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": {
+                "version": "22"
+            },
+            "curated-skills": {
+                "agents": "claude-code"
+            }
+        }
+    }
+}
