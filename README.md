@@ -11,7 +11,7 @@ This repository provides a small set of Dev Container Features for AI tooling an
 | `opencode` | OpenCode AI terminal agent | 18+ |
 | `antigravity-cli` | Antigravity CLI (agy) | 20+ |
 | `codex` | OpenAI's Codex CLI | 22+ |
-| `curated-skills` | Curated agent skills via the `skills` CLI (find-skills, agent-browser, skill-creator, writing-for-agents) | 18+ |
+| `curated-skills` | 15 curated agent skills via the `skills` CLI — matches the CtrlCarlitos dotfiles set (find-skills, agent-browser, skill-creator, frontend-design, Matt Pocock's skills) | 18+ |
 | `graft` | Codebase context graph (@nanonets/graft) | 18+ |
 | `guardrail` | Agent guardrails binary (checksum-verified) | - |
 | `modern-cli` | bat, eza, fd, ripgrep, delta, fzf, jq, duf | - |

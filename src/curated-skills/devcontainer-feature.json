@@ -1,13 +1,13 @@
 {
     "id": "curated-skills",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "name": "Curated Agent Skills",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/curated-skills",
     "description": "Installs curated AI-agent skills via the vercel-labs `skills` CLI into the standard skill paths (~/.agents/skills, ~/.claude/skills) for Claude Code, OpenCode, and Antigravity.",
     "options": {
         "skills": {
             "type": "string",
-            "default": "vercel-labs/skills:find-skills,vercel-labs/agent-browser:agent-browser,anthropics/skills:skill-creator,mattpocock/skills:writing-for-agents",
+            "default": "vercel-labs/skills:find-skills,vercel-labs/agent-browser:agent-browser,anthropics/skills:skill-creator,anthropics/skills:frontend-design,mattpocock/skills:codebase-design,mattpocock/skills:domain-modeling,mattpocock/skills:grill-with-docs,mattpocock/skills:improve-codebase-architecture,mattpocock/skills:prototype,mattpocock/skills:research,mattpocock/skills:grilling,mattpocock/skills:handoff,mattpocock/skills:teach,mattpocock/skills:writing-for-agents,mattpocock/skills:resolving-merge-conflicts",
             "description": "Comma-separated skills as owner/repo:skill-name"
         },
         "agents": {
