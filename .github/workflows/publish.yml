@@ -24,7 +24,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PAT_DEVCONTAINER_FEATURES }}
 
       - name: Publish Features
         uses: devcontainers/action@v1
@@ -33,4 +33,4 @@ jobs:
           base-path-to-features: ./src
           generate-docs: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_DEVCONTAINER_FEATURES }}
