@@ -2,7 +2,7 @@
 set -euo pipefail
 
 FONT_DIR="/usr/local/share/fonts"
-VERSION="${VERSION:-3.4.0}"
+VERSION="${VERSION:-3.5.1}"
 FONTS="${FONTS:-Meslo}"
 MAX_RETRIES=5
 

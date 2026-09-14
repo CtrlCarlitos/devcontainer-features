@@ -90,7 +90,7 @@ This repository uses a **Release Train** model to decouple feature updates from 
 
 ## Docker Volume Mounts for AI Tools
 
-All AI tools (Claude Code, Codex, Antigravity CLI, OpenCode) store authentication, configuration, and data that should persist across container rebuilds. See [DOCKER_VOLUMES.md](DOCKER_VOLUMES.md) for detailed volume mount configurations.
+Claude Code, Codex, and OpenCode store authentication, configuration, and data that should persist across container rebuilds. See [DOCKER_VOLUMES.md](DOCKER_VOLUMES.md) for detailed volume mount configurations.
 
 ### Quick Reference
 
@@ -99,7 +99,7 @@ All AI tools (Claude Code, Codex, Antigravity CLI, OpenCode) store authenticatio
 | OpenCode | `~/.config/opencode` | `~/.local/share/opencode` | `~/.cache/opencode` | 3 |
 | Claude Code | `~/.claude/` | N/A | N/A | 1 |
 | Codex | `~/.codex/` | `~/.local/share/codex/` | `~/.cache/codex/` | 3 |
-| Antigravity CLI | `~/.Antigravity/` | `~/.local/share/antigravity-cli/` | `~/.cache/antigravity-cli/` | 3 |
+| Antigravity CLI | `~/.Antigravity/` | `~/.local/share/Antigravity-cli/` | `~/.cache/Antigravity-cli/` | 3 |
 
 ### Complete docker-compose.yml Example
 
@@ -119,7 +119,7 @@ services:
       - codex_data:/home/vscode/.local/share/codex
       - codex_cache:/home/vscode/.cache/codex
 
-      # Gemini CLI
+      # Antigravity CLI
       - antigravity_config:/home/vscode/.Antigravity
       - antigravity_data:/home/vscode/.local/share/Antigravity-cli
       - antigravity_cache:/home/vscode/.cache/Antigravity-cli
