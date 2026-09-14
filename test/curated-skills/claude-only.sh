@@ -11,7 +11,7 @@ else
     exit 1
 fi
 
-for skill in find-skills agent-browser skill-creator writing-for-agents; do
+for skill in find-skills agent-browser skill-creator frontend-design codebase-design domain-modeling grill-with-docs improve-codebase-architecture prototype research grilling handoff teach writing-for-agents resolving-merge-conflicts; do
     if [ -f "$REMOTE_USER_HOME/.claude/skills/$skill/SKILL.md" ]; then
         echo "✓ ~/.claude/skills/$skill present"
     else

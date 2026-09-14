@@ -6,7 +6,7 @@ echo "Curated Agent Skills Feature"
 REMOTE_USER="${_REMOTE_USER:-vscode}"
 REMOTE_USER_HOME="${_REMOTE_USER_HOME:-/home/$REMOTE_USER}"
 
-SKILLS="${SKILLS:-vercel-labs/skills:find-skills,vercel-labs/agent-browser:agent-browser,anthropics/skills:skill-creator,mattpocock/skills:writing-for-agents}"
+SKILLS="${SKILLS:-vercel-labs/skills:find-skills,vercel-labs/agent-browser:agent-browser,anthropics/skills:skill-creator,anthropics/skills:frontend-design,mattpocock/skills:codebase-design,mattpocock/skills:domain-modeling,mattpocock/skills:grill-with-docs,mattpocock/skills:improve-codebase-architecture,mattpocock/skills:prototype,mattpocock/skills:research,mattpocock/skills:grilling,mattpocock/skills:handoff,mattpocock/skills:teach,mattpocock/skills:writing-for-agents,mattpocock/skills:resolving-merge-conflicts}"
 AGENTS="${AGENTS:-claude-code,opencode,antigravity}"
 
 if ! command -v npx &> /dev/null; then
