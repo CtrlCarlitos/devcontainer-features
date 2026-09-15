@@ -1,5 +1,5 @@
 
-# Node.js (node)
+# Runtime Core (Node.js) (runtime_core)
 
 Installs Node.js via nvm if not already present. Skips installation if Node.js is detected.
 
@@ -7,7 +7,7 @@ Installs Node.js via nvm if not already present. Skips installation if Node.js i
 
 ```json
 "features": {
-    "ghcr.io/CtrlCarlitos/devcontainer-features/node:1": {}
+    "ghcr.io/CtrlCarlitos/devcontainer-features/runtime_core:1": {}
 }
 ```
 

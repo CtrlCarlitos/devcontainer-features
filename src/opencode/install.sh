@@ -14,6 +14,12 @@ ENABLEMDNS="${ENABLEMDNS:-false}"
 ENABLEWEBMODE="${ENABLEWEBMODE:-false}"
 CORSORIGINS="${CORSORIGINS:-}"
 
+if [ -n "$SERVERPASSWORD" ]; then
+    echo "ERROR: serverPassword is no longer supported because feature options are stored in the image." >&2
+    echo "Set OPENCODE_SERVER_PASSWORD at container runtime instead." >&2
+    exit 1
+fi
+
 # Fixed install location (postStartCommand requires static path)
 BIN_DIR="/usr/local/bin"
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -334,8 +340,6 @@ mkdir -p "$DEFAULTS_DIR"
     printf 'OPENCODE_ENABLE_SERVER_DEFAULT=%q\n' "$ENABLESERVER"
     printf 'OPENCODE_SERVER_PORT_DEFAULT=%q\n' "$SERVERPORT"
     printf 'OPENCODE_SERVER_HOSTNAME_DEFAULT=%q\n' "$SERVERHOSTNAME"
-    # Force quotes for password to ensure it's handled correctly by shells and regex
-    printf 'OPENCODE_SERVER_PASSWORD_DEFAULT="%s"\n' "$SERVERPASSWORD"
     printf 'OPENCODE_ENABLE_MDNS_DEFAULT=%q\n' "$ENABLEMDNS"
     printf 'OPENCODE_ENABLE_WEB_DEFAULT=%q\n' "$ENABLEWEBMODE"
     printf 'OPENCODE_CORS_ORIGINS_DEFAULT=%q\n' "$CORSORIGINS"
@@ -343,10 +347,6 @@ mkdir -p "$DEFAULTS_DIR"
 } > "$DEFAULTS_FILE"
 DEFAULTS_GROUP="$(id -gn "$REMOTE_USER" 2>/dev/null || echo root)"
 chown root:"$DEFAULTS_GROUP" "$DEFAULTS_FILE" 2>/dev/null || true
-# Note: File is world-readable (644) because during container build, the target user
-# may not exist yet or be in a different group than root. This file contains
-# configuration defaults including server password (when configured). World-readable
-# is acceptable as this is a development container environment with controlled access.
 chmod 644 "$DEFAULTS_FILE"
 
 
@@ -357,10 +357,6 @@ if [ -f "/usr/local/etc/opencode-defaults" ]; then
     . "/usr/local/etc/opencode-defaults"
 fi
 
-# Export server password and plugins if default is set
-if [ -n "$OPENCODE_SERVER_PASSWORD_DEFAULT" ]; then
-    export OPENCODE_SERVER_PASSWORD="$OPENCODE_SERVER_PASSWORD_DEFAULT"
-fi
 # Plugins are handled by server start script / config file logic
 PROFILEEOF
 chmod 644 /etc/profile.d/00-opencode-init.sh
@@ -370,9 +366,6 @@ RC_SNIPPET='
 # OpenCode configuration
 if [ -f "/usr/local/etc/opencode-defaults" ]; then
     . "/usr/local/etc/opencode-defaults"
-    if [ -n "$OPENCODE_SERVER_PASSWORD_DEFAULT" ]; then
-        export OPENCODE_SERVER_PASSWORD="$OPENCODE_SERVER_PASSWORD_DEFAULT"
-    fi
 fi
 '
 
@@ -520,10 +513,13 @@ if [ "$ENABLE_SERVER" != "true" ]; then
     exit 0
 fi
 
-# Export password if set (from env or defaults)
-SERVER_PASSWORD="${OPENCODE_SERVER_PASSWORD:-${OPENCODE_SERVER_PASSWORD_DEFAULT:-}}"
-if [ -n "$SERVER_PASSWORD" ]; then
-    export OPENCODE_SERVER_PASSWORD="$SERVER_PASSWORD"
+if [ "$HOSTNAME" = "0.0.0.0" ] && [ -z "${OPENCODE_SERVER_PASSWORD:-}" ]; then
+    echo "ERROR: OPENCODE_SERVER_PASSWORD must be set when serverHostname is 0.0.0.0." >&2
+    exit 1
+fi
+
+if [ -n "${OPENCODE_SERVER_PASSWORD:-}" ]; then
+    export OPENCODE_SERVER_PASSWORD
 fi
 
 # Detect devcontainer environment
@@ -832,11 +828,6 @@ fi
 
 PORT="${OPENCODE_SERVER_PORT:-${OPENCODE_SERVER_PORT_DEFAULT:-4096}}"
 HOSTNAME="${OPENCODE_SERVER_HOSTNAME:-${OPENCODE_SERVER_HOSTNAME_DEFAULT:-127.0.0.1}}"
-
-# Ensure password is set from defaults if available
-if [ -z "$OPENCODE_SERVER_PASSWORD" ] && [ -n "$OPENCODE_SERVER_PASSWORD_DEFAULT" ]; then
-    OPENCODE_SERVER_PASSWORD="$OPENCODE_SERVER_PASSWORD_DEFAULT"
-fi
 
 validate_port() {
     local value="$1"
