@@ -13,5 +13,13 @@
                 "skipPermissions": true
             }
         }
+    },
+    "pinned-version": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "claude-code": {
+                "version": "2.1.47"
+            }
+        }
     }
 }

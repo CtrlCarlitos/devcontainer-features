@@ -20,6 +20,14 @@
             }
         }
     },
+    "native-pinned-version": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "opencode": {
+                "version": "1.18.30"
+            }
+        }
+    },
     "server-enabled": {
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {
