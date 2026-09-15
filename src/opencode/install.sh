@@ -14,6 +14,11 @@ ENABLEMDNS="${ENABLEMDNS:-false}"
 ENABLEWEBMODE="${ENABLEWEBMODE:-false}"
 CORSORIGINS="${CORSORIGINS:-}"
 
+if [ "$VERSION" != "latest" ] && [[ ! "$VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "ERROR: version must be 'latest' or a semantic version (for example, 1.18.30)." >&2
+    exit 1
+fi
+
 if [ -n "$SERVERPASSWORD" ]; then
     echo "ERROR: serverPassword is no longer supported because feature options are stored in the image." >&2
     echo "Set OPENCODE_SERVER_PASSWORD at container runtime instead." >&2
