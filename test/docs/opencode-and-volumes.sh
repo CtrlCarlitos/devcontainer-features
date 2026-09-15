@@ -4,6 +4,9 @@ set -euo pipefail
 grep -F 'OPENCODE_SERVER_PASSWORD' DOCKER_VOLUMES.md
 grep -F 'containerEnv' DOCKER_VOLUMES.md
 grep -F '`~/.claude`' DOCKER_VOLUMES.md
+grep -F '`~/.claude.json`' DOCKER_VOLUMES.md
+grep -F 'never use a named volume' DOCKER_VOLUMES.md
+grep -F 'Windows and macOS' DOCKER_VOLUMES.md
 grep -F '`~/.codex`' DOCKER_VOLUMES.md
 grep -F '`~/.config/opencode`' DOCKER_VOLUMES.md
 grep -F 'optional user-managed' DOCKER_VOLUMES.md
@@ -18,3 +21,5 @@ grep -F 'configured remote user' src/codex/NOTES.md
 ! grep -F 'serverPassword' src/opencode/README.md
 grep -F '| plugins |' src/opencode/README.md
 ! grep -F 'docs/security-review' README.md
+grep -F 'OPENCODE_SERVER_PASSWORD' src/opencode/README.md
+! grep -F 'devcontainer-features/node:1' src/runtime_core/README.md

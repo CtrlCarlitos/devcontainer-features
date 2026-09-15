@@ -43,14 +43,14 @@ This feature acts as a **fallback installer** for Node.js:
 ### Default (Node 22)
 ```json
 "features": {
-    "ghcr.io/CtrlCarlitos/devcontainer-features/node:1": {}
+    "ghcr.io/CtrlCarlitos/devcontainer-features/runtime_core:1": {}
 }
 ```
 
 ### Specific Major Version
 ```json
 "features": {
-    "ghcr.io/CtrlCarlitos/devcontainer-features/node:1": {
+    "ghcr.io/CtrlCarlitos/devcontainer-features/runtime_core:1": {
         "version": "20"
     }
 }
@@ -59,7 +59,7 @@ This feature acts as a **fallback installer** for Node.js:
 ### Latest Version
 ```json
 "features": {
-    "ghcr.io/CtrlCarlitos/devcontainer-features/node:1": {
+    "ghcr.io/CtrlCarlitos/devcontainer-features/runtime_core:1": {
         "version": "latest"
     }
 }
@@ -87,7 +87,7 @@ This feature is designed to work with features that depend on Node.js:
 
 ```json
 "features": {
-    "ghcr.io/CtrlCarlitos/devcontainer-features/node:1": {},
+    "ghcr.io/CtrlCarlitos/devcontainer-features/runtime_core:1": {},
     "ghcr.io/CtrlCarlitos/devcontainer-features/claude-code:1": {}
 }
 ```

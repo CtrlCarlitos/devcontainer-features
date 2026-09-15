@@ -52,36 +52,9 @@ For a more stable experience in containers, consider using an API Key instead of
 export ANTHROPIC_API_KEY="sk-..."
 ```
 
-## Configuring Persistence (Docker Volumes)
+## Configuring Persistence
 
-To persist authentication and configuration across container rebuilds, use Docker Volumes.
-
-### Claude Code Volumes
-
-Add to your `docker-compose.yml`:
-
-```yaml
-services:
-  app:
-    volumes:
-      # Claude Code user settings (settings.json, credentials.json, MCP servers)
-      - claude_config:/home/vscode/.claude
-
-      # Claude Code project settings (if using project-specific config)
-      - ./project:/workspaces/project:rw
-
-volumes:
-  claude_config:
-```
-
-**Claude Code paths:**
-- `~/.claude/settings.json` - User settings (permissions, hooks, model overrides)
-- `~/.claude/credentials.json` - Authentication credentials
-- `~/.claude.json` - Global state (theme, OAuth, MCP servers)
-- `.claude/settings.json` - Project settings (checked into source control)
-- `.mcp.json` - Project MCP servers (checked into source control)
-
-> **Note:** Replace `/home/vscode` with `/home/node` or `/root` if using a different user.
+See the repository-wide [persistence guide](../../DOCKER_VOLUMES.md). It covers `~/.claude` and the file-safe handling required for `~/.claude.json`.
 
 
 ---

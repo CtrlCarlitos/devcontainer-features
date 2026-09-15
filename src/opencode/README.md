@@ -41,6 +41,14 @@ Installs OpenCode AI coding agent with optional server mode for remote connectio
 }
 ```
 
+Set the password at runtime, not in feature options:
+
+```json
+"containerEnv": {
+  "OPENCODE_SERVER_PASSWORD": "${localEnv:OPENCODE_SERVER_PASSWORD}"
+}
+```
+
 ### Server Startup & troubleshooting
 
 The OpenCode server is configured to start automatically via `postStartCommand`. If it does not start:

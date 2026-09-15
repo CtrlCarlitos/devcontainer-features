@@ -17,6 +17,7 @@ Do not place OpenCode server passwords in feature options or commit them to `dev
 | Tool | Path | Classification |
 | --- | --- | --- |
 | Claude Code | `~/.claude` | Persist authentication and configuration. |
+| Claude Code | `~/.claude.json` | Optional global OAuth and MCP state; use a file-safe bind mount. |
 | Codex | `~/.codex` | Persist authentication and configuration. |
 | OpenCode | `~/.config/opencode` | Persist configuration. |
 | OpenCode | `~/.opencode` | Optional user-managed path. |
@@ -27,6 +28,8 @@ Do not place OpenCode server passwords in feature options or commit them to `dev
 | Antigravity CLI | `~/.cache/Antigravity-cli` | optional user-managed path, not feature requirements. |
 
 Mount only the paths you need. For named Docker volumes, replace `/home/vscode` below with the configured remote user's home directory:
+
+`~/.claude.json` is a file. Docker named volumes are directories, so never use a named volume at that path. Pre-create a host file and bind-mount it, or use another file-safe persistence mechanism. On Windows and macOS, prefer named volumes for directory state when host-path permissions or path translation are unsuitable.
 
 ```yaml
 services:
