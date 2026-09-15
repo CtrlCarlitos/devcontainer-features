@@ -20,4 +20,15 @@ for skill in find-skills agent-browser skill-creator frontend-design codebase-de
     fi
 done
 
+for root in \
+    "$REMOTE_USER_HOME/.config/opencode/skills" \
+    "$REMOTE_USER_HOME/.gemini/antigravity/skills" \
+    "$REMOTE_USER_HOME/.gemini/antigravity-cli/skills" \
+    "$REMOTE_USER_HOME/.agents/skills"; do
+    if [ -d "$root" ]; then
+        echo "✗ $root should not exist for the claude-code subset"
+        exit 1
+    fi
+done
+
 echo "✓ Test passed"
