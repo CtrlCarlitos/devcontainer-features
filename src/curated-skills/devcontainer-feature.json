@@ -1,9 +1,9 @@
 {
     "id": "curated-skills",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "name": "Curated Agent Skills",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/curated-skills",
-    "description": "Installs curated AI-agent skills via the vercel-labs `skills` CLI into the standard skill paths (~/.agents/skills, ~/.claude/skills) for Claude Code, OpenCode, and Antigravity.",
+    "description": "Installs curated AI-agent skills for Claude Code, OpenCode, Antigravity, and Codex; Antigravity receives skills in both its IDE and CLI global directories.",
     "options": {
         "skills": {
             "type": "string",
@@ -12,8 +12,8 @@
         },
         "agents": {
             "type": "string",
-            "default": "claude-code,opencode,antigravity",
-            "description": "Comma-separated agent targets for the skills CLI"
+            "default": "claude-code,opencode,antigravity,codex",
+            "description": "Comma-separated supported agents: claude-code, opencode, antigravity, codex. Antigravity selects both IDE and CLI global skill directories."
         }
     },
     "installsAfter": [
