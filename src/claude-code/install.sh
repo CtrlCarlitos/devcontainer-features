@@ -199,21 +199,14 @@ install_native() {
         if [ "$VERSION" = "latest" ]; then
             su - "$REMOTE_USER" -c "bash $INSTALLER"
         else
-            # Try passing version; fall back to latest if not supported
-            if ! su - "$REMOTE_USER" -c "bash $INSTALLER --version $VERSION" 2>/dev/null; then
-                echo "NOTE: Installer may not support version pinning. Installing latest."
-                su - "$REMOTE_USER" -c "bash $INSTALLER"
-            fi
+            su - "$REMOTE_USER" -c "bash $INSTALLER $VERSION"
         fi
     else
         # Running as the target user or root is the target
         if [ "$VERSION" = "latest" ]; then
             bash "$INSTALLER"
         else
-            if ! bash "$INSTALLER" --version "$VERSION" 2>/dev/null; then
-                echo "NOTE: Installer may not support version pinning. Installing latest."
-                bash "$INSTALLER"
-            fi
+            bash "$INSTALLER" "$VERSION"
         fi
     fi
 }
