@@ -32,12 +32,7 @@
         "serverHostname": {
             "type": "string",
             "default": "127.0.0.1",
-            "description": "Hostname to bind server to. Defaults to '127.0.0.1' (localhost-only). Set to '0.0.0.0' for network access (requires serverPassword for security)."
-        },
-        "serverPassword": {
-            "type": "string",
-            "default": "",
-            "description": "Password for OpenCode server authentication (recommended when exposing to network)"
+            "description": "Hostname to bind server to. Defaults to '127.0.0.1' (localhost-only). Set to '0.0.0.0' for network access and set OPENCODE_SERVER_PASSWORD at container runtime."
         },
         "enableMdns": {
             "type": "boolean",
@@ -73,7 +68,7 @@
             }
         }
     },
-    "postStartCommand": "/usr/local/bin/opencode-server-start.sh",
+    "postStartCommand": ". /usr/local/etc/opencode-defaults; if [ -z \"${OPENCODE_SERVER_PASSWORD:-}\" ] && [ \"${OPENCODE_SERVER_HOSTNAME:-$OPENCODE_SERVER_HOSTNAME_DEFAULT}\" = \"0.0.0.0\" ]; then echo 'OpenCode server not started: OPENCODE_SERVER_PASSWORD must be set when serverHostname is 0.0.0.0.' >&2; else /usr/local/bin/opencode-server-start.sh; fi",
     "installsAfter": [
         "./runtime_core",
         "ghcr.io/devcontainers/features/common-utils"

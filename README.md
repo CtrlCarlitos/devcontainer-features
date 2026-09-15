@@ -90,62 +90,19 @@ This repository uses a **Release Train** model to decouple feature updates from 
 
 ## Docker Volume Mounts for AI Tools
 
-Claude Code, Codex, and OpenCode store authentication, configuration, and data that should persist across container rebuilds. See [DOCKER_VOLUMES.md](DOCKER_VOLUMES.md) for detailed volume mount configurations.
+See [DOCKER_VOLUMES.md](DOCKER_VOLUMES.md) for state-path classifications, volume examples, and runtime-secret guidance.
 
-### Quick Reference
+## Platform Support
 
-| Tool | Config Path | Data Path | Cache Path | # Volumes |
-|-------|-------------|------------|--------------|--------------|
-| OpenCode | `~/.config/opencode` | `~/.local/share/opencode` | `~/.cache/opencode` | 3 |
-| Claude Code | `~/.claude/` | N/A | N/A | 1 |
-| Codex | `~/.codex/` | `~/.local/share/codex/` | `~/.cache/codex/` | 3 |
-| Antigravity CLI | `~/.Antigravity/` | `~/.local/share/Antigravity-cli/` | `~/.cache/Antigravity-cli/` | 3 |
+| Feature | Constraint |
+| --- | --- |
+| `runtime_core`, `nerd-font` | Debian/Ubuntu images with `apt-get` |
+| `guardrail` | Linux x86_64 |
+| `modern-cli` | Non-APT download fallbacks support x86_64 and arm64 |
+| `playwright` | Browser dependencies are best effort outside Debian/Ubuntu |
+| `codex` binary install | Linux container x86_64/arm64 only |
 
-### Complete docker-compose.yml Example
-
-Example with all AI tools configured:
-
-```yaml
-version: '3.8'
-services:
-  app:
-    image: mcr.microsoft.com/devcontainers/base:ubuntu
-    volumes:
-      # Claude Code
-      - claude_config:/home/vscode/.claude
-
-      # Codex
-      - codex_config:/home/vscode/.codex
-      - codex_data:/home/vscode/.local/share/codex
-      - codex_cache:/home/vscode/.cache/codex
-
-      # Antigravity CLI
-      - antigravity_config:/home/vscode/.Antigravity
-      - antigravity_data:/home/vscode/.local/share/Antigravity-cli
-      - antigravity_cache:/home/vscode/.cache/Antigravity-cli
-
-      # OpenCode
-      - opencode_config:/home/vscode/.config/opencode
-      - opencode_data:/home/vscode/.local/share/opencode
-      - opencode_cache:/home/vscode/.cache/opencode
-
-      # Your workspace
-      - .:/workspace
-
-volumes:
-  claude_config:
-  codex_config:
-  codex_data:
-  codex_cache:
-  antigravity_config:
-  antigravity_data:
-  antigravity_cache:
-  opencode_config:
-  opencode_data:
-  opencode_cache:
-```
-
-> **Note:** Replace `/home/vscode` with `/home/node` or `/root` if using a different user.
+Other features depend on their documented runtime and upstream installer availability.
 
 ## Security
 
@@ -164,7 +121,7 @@ Installers download binaries and packages from external URLs (e.g., `https://ope
 - npm packages use `--ignore-scripts` to prevent postinstall script execution
 - All inputs are sanitized where possible (e.g., version parameters)
 
-For detailed security audits, see the [security-review](docs/security-review/) directory.
+Review each feature's installer and documentation before using it in a security-sensitive environment.
 
 ## License
 

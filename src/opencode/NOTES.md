@@ -9,9 +9,16 @@
         "enableServer": true,
         "enableWebMode": true,
         "serverHostname": "0.0.0.0",  // Explicitly set for network access (default is 127.0.0.1 for security)
-        "serverPassword": "your-secure-password",
         "corsOrigins": "opencode.localhost"
     }
+}
+```
+
+Set the password at runtime, not in feature options:
+
+```json
+"containerEnv": {
+  "OPENCODE_SERVER_PASSWORD": "${localEnv:OPENCODE_SERVER_PASSWORD}"
 }
 ```
 
@@ -49,33 +56,9 @@ The OpenCode server is configured to start automatically via `postStartCommand`.
 
 ## Configuring Persistence (Docker Volumes)
 
-To persist authentication and configuration across container rebuilds, use Docker Volumes. This avoids the need to re-authenticate every time you recreate the container.
-
-Add the following to your `docker-compose.yml`:
-
-```yaml
-services:
-  app:
-    # ...
-    volumes:
-      # OpenCode global config (opencode.json, plugins/, agents/, etc.)
-      - opencode_config:/home/vscode/.config/opencode
-
-      # OpenCode app data (auth.json, logs, project sessions)
-      - opencode_data:/home/vscode/.local/share/opencode
-
-      # OpenCode cache (provider packages + plugin node_modules)
-      - opencode_cache:/home/vscode/.cache/opencode
-
-volumes:
-  opencode_config:
-  opencode_data:
-  opencode_cache:
-```
-
-> **Note:** Replace `/home/vscode` with `/home/node` or `/root` if using a different user.
+See the repository-wide [persistence guide](../../DOCKER_VOLUMES.md) for OpenCode state-path classifications and mount examples.
 
 ### Server Stability & Security (v1.1.7)
 
--   **Password Persistence**: Fixed issue where `OPENCODE_SERVER_PASSWORD` was lost in some shell sessions. It is now persisted in `/usr/local/etc/opencode-defaults` and loaded via `/etc/profile.d/`.
--   **Health Check**: Fixed `opencode-server-status` reporting "NOT RUNNING" when password auth was enabled. The check now correctly authenticates using the configured password.
+-   **Runtime Passwords**: Set `OPENCODE_SERVER_PASSWORD` at container runtime for an exposed server. Passwords are not stored in feature options or image defaults.
+-   **Health Check**: `opencode-server-status` authenticates with `OPENCODE_SERVER_PASSWORD` when it is present in the runtime environment.

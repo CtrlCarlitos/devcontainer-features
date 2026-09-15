@@ -47,7 +47,7 @@
             }
         }
     },
-    "server-password": {
+    "runtime-password": {
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {
             "ghcr.io/devcontainers/features/common-utils": {},
@@ -57,8 +57,46 @@
             "opencode": {
                 "version": "latest",
                 "enableServer": true,
-                "serverHostname": "0.0.0.0",
-                "serverPassword": "testpassword"
+                "serverHostname": "127.0.0.1"
+            }
+        }
+    },
+    "exposed-server-without-password": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": { "version": "22" },
+            "opencode": {
+                "version": "latest",
+                "enableServer": true,
+                "serverHostname": "0.0.0.0"
+            }
+        }
+    },
+    "exposed-server-runtime-localhost": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "containerEnv": {
+            "OPENCODE_SERVER_HOSTNAME": "127.0.0.1"
+        },
+        "features": {
+            "runtime_core": { "version": "22" },
+            "opencode": {
+                "version": "latest",
+                "enableServer": true,
+                "serverHostname": "0.0.0.0"
+            }
+        }
+    },
+    "exposed-server-runtime-password": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "containerEnv": {
+            "OPENCODE_SERVER_PASSWORD": "testpassword"
+        },
+        "features": {
+            "runtime_core": { "version": "22" },
+            "opencode": {
+                "version": "latest",
+                "enableServer": true,
+                "serverHostname": "0.0.0.0"
             }
         }
     },
