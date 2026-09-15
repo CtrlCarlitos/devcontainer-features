@@ -7,22 +7,43 @@ REMOTE_USER="${_REMOTE_USER:-vscode}"
 REMOTE_USER_HOME="${_REMOTE_USER_HOME:-/home/$REMOTE_USER}"
 
 SKILLS="${SKILLS:-vercel-labs/skills:find-skills,vercel-labs/agent-browser:agent-browser,anthropics/skills:skill-creator,anthropics/skills:frontend-design,mattpocock/skills:codebase-design,mattpocock/skills:domain-modeling,mattpocock/skills:grill-with-docs,mattpocock/skills:improve-codebase-architecture,mattpocock/skills:prototype,mattpocock/skills:research,mattpocock/skills:grilling,mattpocock/skills:handoff,mattpocock/skills:teach,mattpocock/skills:writing-for-agents,mattpocock/skills:resolving-merge-conflicts,mattpocock/skills:code-review>mp-code-review}"
-AGENTS="${AGENTS:-claude-code,opencode,antigravity}"
+AGENTS="${AGENTS:-claude-code,opencode,antigravity,codex}"
 
 if ! command -v npx &> /dev/null; then
     echo "ERROR: npx not found. Add the runtime_core feature (or another Node.js source) before curated-skills."
     exit 1
 fi
 
-# Build -a flags from the comma-separated agents option
-AGENT_FLAGS=()
+# Resolve the comma-separated agent option to its native global skill roots.
+TARGET_DIRS=()
+declare -A TARGET_DIR_SEEN=()
 IFS=',' read -ra AGENT_LIST <<< "$AGENTS"
 for agent in "${AGENT_LIST[@]}"; do
     agent="${agent//[[:space:]]/}"
-    [ -n "$agent" ] && AGENT_FLAGS+=(-a "$agent")
+    [ -z "$agent" ] && continue
+
+    case "$agent" in
+        claude-code) resolved_dirs=("$REMOTE_USER_HOME/.claude/skills") ;;
+        opencode) resolved_dirs=("$REMOTE_USER_HOME/.config/opencode/skills") ;;
+        antigravity)
+            resolved_dirs=(
+                "$REMOTE_USER_HOME/.gemini/antigravity/skills"
+                "$REMOTE_USER_HOME/.gemini/antigravity-cli/skills"
+            )
+            ;;
+        codex) resolved_dirs=("$REMOTE_USER_HOME/.agents/skills") ;;
+        *) echo "ERROR: unsupported agent '$agent'"; exit 1 ;;
+    esac
+
+    for target_dir in "${resolved_dirs[@]}"; do
+        if [ -z "${TARGET_DIR_SEEN[$target_dir]+x}" ]; then
+            TARGET_DIRS+=("$target_dir")
+            TARGET_DIR_SEEN["$target_dir"]=1
+        fi
+    done
 done
 
-if [ "${#AGENT_FLAGS[@]}" -eq 0 ]; then
+if [ "${#TARGET_DIRS[@]}" -eq 0 ]; then
     echo "ERROR: no valid agents in AGENTS option: $AGENTS"
     exit 1
 fi
@@ -75,14 +96,17 @@ if [ "${#REPO_SKILLS[@]}" -eq 0 ] && [ "${#RENAMED[@]}" -eq 0 ]; then
     exit 1
 fi
 
-# HOME must point at the remote user's home so the skills CLI writes
-# ~/.agents/skills and ~/.claude/skills for the container user, not root.
-# stdin at EOF: the CLI prompts (or stalls) when given a TTY.
+# Stage the CLI's Claude Code output once, then copy the canonical roster to
+# each selected native target. stdin at EOF prevents interactive CLI prompts.
+STAGING_HOME="$(mktemp -d)"
+trap 'rm -rf "$STAGING_HOME"' EXIT
+STAGED_SKILLS="$STAGING_HOME/.claude/skills"
+
 if [ "${#REPO_SKILLS[@]}" -gt 0 ]; then
     for repo in "${!REPO_SKILLS[@]}"; do
         echo "Installing skills from $repo: ${REPO_SKILLS[$repo]}"
-        HOME="$REMOTE_USER_HOME" npx --yes --loglevel=error skills@latest add "$repo" \
-            -s ${REPO_SKILLS[$repo]} "${AGENT_FLAGS[@]}" -g -y --copy < /dev/null
+        HOME="$STAGING_HOME" npx --yes --loglevel=error skills@latest add "$repo" \
+            -s ${REPO_SKILLS[$repo]} -a claude-code -g -y --copy < /dev/null
     done
 fi
 
@@ -116,8 +140,8 @@ install_renamed_skill() {
     mv "$tmp/stage/$newname/SKILL.md.tmp" "$tmp/stage/$newname/SKILL.md"
 
     echo "Installing renamed skill: $repo/$skill -> $newname"
-    HOME="$REMOTE_USER_HOME" npx --yes --loglevel=error skills@latest add "$tmp/stage" \
-        -s "$newname" "${AGENT_FLAGS[@]}" -g -y --copy < /dev/null
+    HOME="$STAGING_HOME" npx --yes --loglevel=error skills@latest add "$tmp/stage" \
+        -s "$newname" -a claude-code -g -y --copy < /dev/null
     rm -rf "$tmp"
 }
 
@@ -131,26 +155,45 @@ if [ "${#RENAMED[@]}" -gt 0 ]; then
     done
 fi
 
-# Feature installs run as root during image build; hand the skill trees
-# back to the container user.
-if [ "$(id -u)" = "0" ] && [ "$REMOTE_USER" != "root" ]; then
-    chown -R "$REMOTE_USER" \
-        "$REMOTE_USER_HOME/.agents" \
-        "$REMOTE_USER_HOME/.claude" 2>/dev/null || true
-fi
-
-INSTALLED=0
-for dir in "$REMOTE_USER_HOME/.agents/skills" "$REMOTE_USER_HOME/.claude/skills"; do
-    if [ -d "$dir" ]; then
-        for skill_dir in "$dir"/*; do
-            [ -f "$skill_dir/SKILL.md" ] && INSTALLED=$((INSTALLED + 1))
-        done
-    fi
-done
-
-if [ "$INSTALLED" -eq 0 ]; then
-    echo "ERROR: no skills with SKILL.md found under $REMOTE_USER_HOME after install."
+if ! find "$STAGED_SKILLS" -mindepth 2 -maxdepth 2 -type f -name SKILL.md -print -quit | grep -q .; then
+    echo "ERROR: no staged skills with SKILL.md found after install."
     exit 1
 fi
 
-echo "Curated skills installed ($INSTALLED skill directories verified)."
+STAGED_COUNT=0
+for skill_dir in "$STAGED_SKILLS"/*; do
+    [ -d "$skill_dir" ] || continue
+    skill_name="$(basename "$skill_dir")"
+    if [ ! -f "$skill_dir/SKILL.md" ]; then
+        echo "ERROR: staged skill '$skill_name' is missing SKILL.md"
+        exit 1
+    fi
+    STAGED_COUNT=$((STAGED_COUNT + 1))
+
+    for target_dir in "${TARGET_DIRS[@]}"; do
+        mkdir -p "$target_dir"
+        rm -rf "$target_dir/$skill_name"
+        cp -a "$skill_dir" "$target_dir/"
+        if [ "$(id -u)" = "0" ] && [ "$REMOTE_USER" != "root" ]; then
+            chown -R "$REMOTE_USER" "$target_dir/$skill_name"
+        fi
+    done
+done
+
+if [ "$STAGED_COUNT" -eq 0 ]; then
+    echo "ERROR: no staged skill directories found after install."
+    exit 1
+fi
+
+for skill_dir in "$STAGED_SKILLS"/*; do
+    [ -d "$skill_dir" ] || continue
+    skill_name="$(basename "$skill_dir")"
+    for target_dir in "${TARGET_DIRS[@]}"; do
+        if [ ! -f "$target_dir/$skill_name/SKILL.md" ]; then
+            echo "ERROR: target '$target_dir' is missing SKILL.md for skill '$skill_name'"
+            exit 1
+        fi
+    done
+done
+
+echo "Curated skills installed ($STAGED_COUNT staged skills copied to ${#TARGET_DIRS[@]} target directories)."
