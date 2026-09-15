@@ -17,3 +17,4 @@ grep -F 'configured remote user' src/codex/NOTES.md
 ! grep -F '/home/vscode/.codex:ro' src/codex/NOTES.md
 ! grep -F 'serverPassword' src/opencode/README.md
 grep -F '| plugins |' src/opencode/README.md
+! grep -F 'docs/security-review' README.md

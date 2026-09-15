@@ -121,7 +121,7 @@ Installers download binaries and packages from external URLs (e.g., `https://ope
 - npm packages use `--ignore-scripts` to prevent postinstall script execution
 - All inputs are sanitized where possible (e.g., version parameters)
 
-For detailed security audits, see the [security-review](docs/security-review/) directory.
+Review each feature's installer and documentation before using it in a security-sensitive environment.
 
 ## License
 
