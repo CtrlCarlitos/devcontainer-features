@@ -15,8 +15,8 @@ SKILL_ROOTS=(
 for root in "${SKILL_ROOTS[@]}"; do
     for skill in $EXPECTED; do
         skill_file="$root/$skill/SKILL.md"
-        if [ ! -f "$skill_file" ]; then
-            echo "✗ $skill_file missing"
+        if [ ! -r "$skill_file" ]; then
+            echo "✗ $skill_file missing or unreadable"
             exit 1
         fi
         if [ "$(stat -c %U "$skill_file")" != "${_REMOTE_USER:-vscode}" ]; then

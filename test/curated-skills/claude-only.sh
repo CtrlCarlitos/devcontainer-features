@@ -4,18 +4,24 @@ echo "Testing curated-skills (claude-only agents)..."
 
 REMOTE_USER_HOME="${_REMOTE_USER_HOME:-/home/vscode}"
 
-if [ -f "$REMOTE_USER_HOME/.claude/skills/find-skills/SKILL.md" ]; then
-    echo "✓ ~/.claude/skills/find-skills present"
+if [ -r "$REMOTE_USER_HOME/.claude/skills/find-skills/SKILL.md" ]; then
+    echo "✓ ~/.claude/skills/find-skills present and readable"
 else
-    echo "✗ ~/.claude/skills/find-skills missing"
+    echo "✗ ~/.claude/skills/find-skills missing or unreadable"
     exit 1
 fi
 
 for skill in find-skills agent-browser skill-creator frontend-design codebase-design domain-modeling grill-with-docs improve-codebase-architecture prototype research grilling handoff teach writing-for-agents resolving-merge-conflicts mp-code-review; do
-    if [ -f "$REMOTE_USER_HOME/.claude/skills/$skill/SKILL.md" ]; then
-        echo "✓ ~/.claude/skills/$skill present"
+    skill_file="$REMOTE_USER_HOME/.claude/skills/$skill/SKILL.md"
+    if [ -r "$skill_file" ]; then
+        echo "✓ ~/.claude/skills/$skill present and readable"
     else
-        echo "✗ ~/.claude/skills/$skill missing"
+        echo "✗ ~/.claude/skills/$skill missing or unreadable"
+        exit 1
+    fi
+
+    if [ "$(stat -c %U "$skill_file")" != "${_REMOTE_USER:-vscode}" ]; then
+        echo "✗ $skill_file has incorrect owner"
         exit 1
     fi
 done

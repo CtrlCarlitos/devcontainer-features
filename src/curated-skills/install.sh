@@ -57,6 +57,7 @@ valid_name() {
 # collisions with the user's own commands/skills.
 declare -A REPO_SKILLS=()
 RENAMED=()
+EXPECTED_SKILLS=()
 IFS=',' read -ra SKILL_LIST <<< "$SKILLS"
 for entry in "${SKILL_LIST[@]}"; do
     entry="${entry//[[:space:]]/}"
@@ -86,8 +87,10 @@ for entry in "${SKILL_LIST[@]}"; do
             exit 1
         fi
         RENAMED+=("$repo:$skill>$newname")
+        EXPECTED_SKILLS+=("$newname")
     else
         REPO_SKILLS["$repo"]+="${REPO_SKILLS[$repo]:+ }$skill"
+        EXPECTED_SKILLS+=("$skill")
     fi
 done
 
@@ -155,10 +158,12 @@ if [ "${#RENAMED[@]}" -gt 0 ]; then
     done
 fi
 
-if ! find "$STAGED_SKILLS" -mindepth 2 -maxdepth 2 -type f -name SKILL.md -print -quit | grep -q .; then
-    echo "ERROR: no staged skills with SKILL.md found after install."
-    exit 1
-fi
+for skill_name in "${EXPECTED_SKILLS[@]}"; do
+    if [ ! -f "$STAGED_SKILLS/$skill_name/SKILL.md" ]; then
+        echo "ERROR: staged skill '$skill_name' is missing SKILL.md"
+        exit 1
+    fi
+done
 
 STAGED_COUNT=0
 for skill_dir in "$STAGED_SKILLS"/*; do

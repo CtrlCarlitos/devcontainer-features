@@ -12,10 +12,16 @@ SKILL_ROOTS=(
 )
 
 for root in "${SKILL_ROOTS[@]}"; do
-    if [ -f "$root/find-skills/SKILL.md" ]; then
-        echo "✓ $root/find-skills installed"
+    skill_file="$root/find-skills/SKILL.md"
+    if [ -r "$skill_file" ]; then
+        echo "✓ $root/find-skills installed and readable"
     else
-        echo "✗ $root/find-skills missing"
+        echo "✗ $root/find-skills missing or unreadable"
+        exit 1
+    fi
+
+    if [ "$(stat -c %U "$skill_file")" != "${_REMOTE_USER:-vscode}" ]; then
+        echo "✗ $skill_file has incorrect owner"
         exit 1
     fi
 
