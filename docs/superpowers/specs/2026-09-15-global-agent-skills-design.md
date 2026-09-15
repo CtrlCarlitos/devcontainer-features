@@ -28,10 +28,10 @@ The staged roster is the sole source for the copies. This avoids relying on
 undocumented shared-directory discovery and avoids the `skills` CLI's Codex
 mapping, which differs from Codex's documented global location.
 
-The feature will preserve the existing agent-selection option only if it can
-continue to produce a complete, explicit target set. A selected target means
-the corresponding documented directory or directories receive the complete
-roster; `antigravity` includes both its IDE and CLI targets.
+The `agents` option will default to all four agents: `claude-code`, `opencode`,
+`antigravity`, and `codex`. An explicit subset remains supported. A selected
+target means the corresponding documented directory or directories receive the
+complete roster; `antigravity` includes both its IDE and CLI targets.
 
 ## Data Flow
 
