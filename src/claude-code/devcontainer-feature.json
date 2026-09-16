@@ -1,9 +1,9 @@
 {
     "id": "claude-code",
-    "version": "1.3.3",
+    "version": "1.3.4",
     "name": "Claude Code",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/claude-code",
-    "description": "Installs Claude Code AI coding assistant with headless mode and MCP server support. Uses the native installer (recommended by Anthropic).",
+    "description": "Installs Claude Code AI coding assistant with headless mode and MCP server support. Attribution is disabled by default; set disableAttribution to false to opt out. Uses the native installer (recommended by Anthropic).",
     "options": {
         "version": {
             "type": "string",
@@ -29,6 +29,11 @@
             "type": "boolean",
             "default": false,
             "description": "Run initial setup with --dangerously-skip-permissions for headless environments"
+        },
+        "disableAttribution": {
+            "type": "boolean",
+            "default": true,
+            "description": "Disable Claude Code commit, PR, and session attribution."
         }
     },
     "installsAfter": [

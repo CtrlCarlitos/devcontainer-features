@@ -14,5 +14,11 @@ check "claude defaults file exists" test -f /usr/local/etc/claude-code-defaults
 check "claude-remote-auth runs" bash -c "claude-remote-auth >/dev/null"
 check "claude-info runs" bash -c "claude-info >/dev/null"
 check "claude-headless shows usage" bash -c "! claude-headless"
+check "attribution settings exist" test -f "$HOME/.claude/settings.json"
+check "co-author attribution disabled" jq -e '.includeCoAuthoredBy == false' "$HOME/.claude/settings.json"
+check "commit attribution disabled" jq -e '.attribution.commit == ""' "$HOME/.claude/settings.json"
+check "PR attribution disabled" jq -e '.attribution.pr == ""' "$HOME/.claude/settings.json"
+check "session attribution disabled" jq -e '.attribution.sessionUrl == false' "$HOME/.claude/settings.json"
+check "settings mode is private" bash -c '[ "$(stat -c %a "$HOME/.claude/settings.json")" = 600 ]'
 
 reportResults
