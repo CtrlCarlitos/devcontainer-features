@@ -1,40 +1,24 @@
-# Antigravity CLI (agy)
 
-Installs the [Antigravity CLI](https://antigravity.google/cli) — Google's
-terminal/headless AI agent surface. This replaces the retired Gemini CLI.
+# Antigravity CLI (agy) (antigravity-cli)
 
-## Usage
+Installs the Antigravity CLI (agy) — Google's terminal/headless AI agent surface. Replaces the retired Gemini CLI.
 
-Add to your `devcontainer.json`:
+## Example Usage
 
 ```json
-{
-    "features": {
-        "ghcr.io/CtrlCarlitos/devcontainer-features/antigravity-cli:1": {}
-    }
+"features": {
+    "ghcr.io/CtrlCarlitos/devcontainer-features/antigravity-cli:1": {}
 }
 ```
 
-## What it does
+## Options
 
-- Downloads and runs the official installer from `antigravity.google/cli/install.sh`
-- Symlinks the binary to `/usr/local/bin/agy` for global access
-- Idempotent — skips if `agy` is already on PATH
+| Options Id | Description | Type | Default Value |
+|-----|-----|-----|-----|
 
-## Base image requirements
 
-- Debian/Ubuntu base (uses `curl` and `bash`)
-- No Node.js required — the installer is self-contained
 
-## Replacing gemini-cli
 
-If you were using the `gemini-cli` feature, replace it:
+---
 
-```diff
-- "ghcr.io/CtrlCarlitos/devcontainer-features/gemini-cli:1": {}
-+ "ghcr.io/CtrlCarlitos/devcontainer-features/antigravity-cli:1": {}
-```
-
-Google retired the standalone Gemini CLI for individuals in favor of the
-Antigravity suite. See the [Antigravity docs](https://antigravity.google/docs)
-for the CLI's capabilities.
+_Note: This file was auto-generated from the [devcontainer-feature.json](devcontainer-feature.json).  Add additional notes to a `NOTES.md`._
