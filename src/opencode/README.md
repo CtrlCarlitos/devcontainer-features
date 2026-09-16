@@ -15,7 +15,7 @@ Installs OpenCode AI coding agent with optional server mode for remote connectio
 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
-| version | OpenCode version to install (e.g., 'latest', '1.0.0') | string | 1.18.30 |
+| version | OpenCode version to install (e.g., 'latest', '1.0.0') | string | 1.18.31 |
 | installMethod | Installation method. 'native' uses official curl installer, 'npm' installs opencode-ai package | string | native |
 | enableServer | Automatically start OpenCode server on container start for remote access | boolean | false |
 | serverPort | Port for OpenCode server (default: 4096) | string | 4096 |
