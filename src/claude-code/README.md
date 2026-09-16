@@ -1,7 +1,7 @@
 
 # Claude Code (claude-code)
 
-Installs Claude Code AI coding assistant with headless mode and MCP server support. Uses the native installer (recommended by Anthropic).
+Installs Claude Code AI coding assistant with headless mode and MCP server support. Attribution is disabled by default; set disableAttribution to false to opt out. Uses the native installer (recommended by Anthropic).
 
 ## Example Usage
 
@@ -19,6 +19,7 @@ Installs Claude Code AI coding assistant with headless mode and MCP server suppo
 | enableMcpServer | Configure Claude Code to be available as an MCP server for other agents | boolean | false |
 | authMethod | Preferred authentication method. 'api-key' uses ANTHROPIC_API_KEY env var, 'oauth' requires browser | string | none |
 | skipPermissions | Run initial setup with --dangerously-skip-permissions for headless environments | boolean | false |
+| disableAttribution | Disable Claude Code commit, PR, and session attribution. | boolean | true |
 
 
 ## Example Usage
