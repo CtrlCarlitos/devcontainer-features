@@ -21,5 +21,25 @@ check "commit attribution disabled" jq -e '.attribution.commit == ""' "$HOME/.cl
 check "PR attribution disabled" jq -e '.attribution.pr == ""' "$HOME/.claude/settings.json"
 check "session attribution disabled" jq -e '.attribution.sessionUrl == false' "$HOME/.claude/settings.json"
 check "settings mode is private" bash -c '[ "$(stat -c %a "$HOME/.claude/settings.json")" = 600 ]'
+check "helper preserves nested settings and mode" bash -c '
+  printf "{\"unrelated\":{\"keep\":true},\"attribution\":{\"custom\":\"keep\"}}" > "$HOME/.claude/settings.json"
+  chmod 640 "$HOME/.claude/settings.json"
+  /usr/local/bin/claude-disable-attribution "$HOME"
+  jq -e ".unrelated.keep == true and .attribution.custom == \"keep\" and .attribution.commit == \"\"" "$HOME/.claude/settings.json" >/dev/null
+  [ "$(stat -c %a "$HOME/.claude/settings.json")" = 640 ]
+'
+check "helper handles zero-byte settings atomically" bash -c '
+  : > "$HOME/.claude/settings.json"
+  before=$(stat -c %i "$HOME/.claude/settings.json")
+  /usr/local/bin/claude-disable-attribution "$HOME"
+  after=$(stat -c %i "$HOME/.claude/settings.json")
+  jq empty "$HOME/.claude/settings.json" && [ "$before" != "$after" ]
+'
+check "helper preserves malformed settings" bash -c '
+  printf "{ malformed" > "$HOME/.claude/settings.json"
+  before=$(sha256sum "$HOME/.claude/settings.json" | cut -d" " -f1)
+  /usr/local/bin/claude-disable-attribution "$HOME" >/dev/null 2>&1
+  [ "$before" = "$(sha256sum "$HOME/.claude/settings.json" | cut -d" " -f1)" ]
+'
 
 reportResults
