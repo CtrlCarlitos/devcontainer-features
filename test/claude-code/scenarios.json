@@ -13,5 +13,14 @@
                 "skipPermissions": true
             }
         }
+    },
+    "attribution-enabled": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "claude-code": {
+                "version": "latest",
+                "disableAttribution": false
+            }
+        }
     }
 }
