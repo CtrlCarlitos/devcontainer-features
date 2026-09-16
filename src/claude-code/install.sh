@@ -223,50 +223,47 @@ install_native() {
 
 install_native
 
+cat > /usr/local/bin/claude-disable-attribution << 'ATTRIBUTION'
+#!/bin/bash
+set -euo pipefail
+
+home="$1"
+claude_dir="${home}/.claude"
+settings_file="${claude_dir}/settings.json"
+mode="600"
+source=""
+mkdir -p "$claude_dir"
+if [ -s "$settings_file" ]; then
+    if ! jq empty "$settings_file" >/dev/null 2>&1; then
+        echo "WARNING: Claude settings at $settings_file contain malformed JSON; attribution settings were not changed." >&2
+        exit 0
+    fi
+    source="$settings_file"
+    mode="$(stat -c '%a' "$settings_file" 2>/dev/null || stat -f '%Lp' "$settings_file")"
+fi
+temporary="$(mktemp "${claude_dir}/.settings.json.XXXXXX")"
+trap 'rm -f "$temporary"' EXIT
+filter='
+    .includeCoAuthoredBy = false |
+    .attribution = (
+        if (.attribution | type) == "object" then .attribution else {} end +
+        {"commit": "", "pr": "", "sessionUrl": false}
+    )
+'
+if [ -n "$source" ]; then jq "$filter" "$source" > "$temporary"; else jq -n "$filter" > "$temporary"; fi
+chmod "$mode" "$temporary"
+mv "$temporary" "$settings_file"
+ATTRIBUTION
+chmod +x /usr/local/bin/claude-disable-attribution
+
 disable_attribution() {
     [ "$DISABLEATTRIBUTION" = "true" ] || return 0
-
     if ! command -v jq >/dev/null 2>&1; then
-        if ! command -v apt-get >/dev/null 2>&1; then
-            echo "WARNING: jq is required to disable Claude attribution, but no supported package manager is available." >&2
-            return 0
-        fi
         apt-get update >/dev/null && apt-get install -y --no-install-recommends jq >/dev/null
     fi
-
-    local claude_dir="${REMOTE_USER_HOME}/.claude"
-    local settings_file="${claude_dir}/settings.json"
-    local mode="600"
-    local source=""
-    mkdir -p "$claude_dir"
-    if [ -s "$settings_file" ]; then
-        if ! jq empty "$settings_file" >/dev/null 2>&1; then
-            echo "WARNING: Claude settings at $settings_file contain malformed JSON; attribution settings were not changed." >&2
-            return 0
-        fi
-        source="$settings_file"
-        mode="$(stat -c '%a' "$settings_file" 2>/dev/null || stat -f '%Lp' "$settings_file")"
-    fi
-
-    local temporary
-    temporary="$(mktemp "${claude_dir}/.settings.json.XXXXXX")"
-    CLEANUP_FILES+=("$temporary")
-    local filter='
-        .includeCoAuthoredBy = false |
-        .attribution = (
-            if (.attribution | type) == "object" then .attribution else {} end +
-            {"commit": "", "pr": "", "sessionUrl": false}
-        )
-    '
-    if [ -n "$source" ]; then
-        jq "$filter" "$source" > "$temporary"
-    else
-        jq -n "$filter" > "$temporary"
-    fi
-    chmod "$mode" "$temporary"
-    mv "$temporary" "$settings_file"
+    /usr/local/bin/claude-disable-attribution "$REMOTE_USER_HOME"
     if [ "$REMOTE_USER" != "root" ] && [ "$(id -u)" = "0" ]; then
-        chown "$REMOTE_USER:$(id -gn "$REMOTE_USER")" "$settings_file"
+        chown "$REMOTE_USER:$(id -gn "$REMOTE_USER")" "${REMOTE_USER_HOME}/.claude/settings.json"
     fi
 }
 

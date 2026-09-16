@@ -15,6 +15,7 @@ check "claude-remote-auth runs" bash -c "claude-remote-auth >/dev/null"
 check "claude-info runs" bash -c "claude-info >/dev/null"
 check "claude-headless shows usage" bash -c "! claude-headless"
 check "attribution settings exist" test -f "$HOME/.claude/settings.json"
+check "attribution helper exists" test -x /usr/local/bin/claude-disable-attribution
 check "co-author attribution disabled" jq -e '.includeCoAuthoredBy == false' "$HOME/.claude/settings.json"
 check "commit attribution disabled" jq -e '.attribution.commit == ""' "$HOME/.claude/settings.json"
 check "PR attribution disabled" jq -e '.attribution.pr == ""' "$HOME/.claude/settings.json"
