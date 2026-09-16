@@ -189,27 +189,30 @@ install_native() {
 
     chmod +x "$INSTALLER"
 
-    if [ "$REMOTE_USER" != "root" ] && [ "$(whoami)" = "root" ]; then
-        # Install as target user so the installer doesn't land in /root
-        mkdir -p "${REMOTE_USER_HOME}/.local/bin" "${REMOTE_USER_HOME}/.local/state"
-        chown -R "$REMOTE_USER:$REMOTE_USER" "${REMOTE_USER_HOME}/.local" 2>/dev/null || true
-
-        if [ "$VERSION" = "latest" ]; then
-            su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\""
+    for attempt in 1 2 3; do
+        if [ "$REMOTE_USER" != "root" ] && [ "$(whoami)" = "root" ]; then
+            # Install as target user so the installer doesn't land in /root.
+            mkdir -p "${REMOTE_USER_HOME}/.local/bin" "${REMOTE_USER_HOME}/.local/state"
+            chown -R "$REMOTE_USER:$REMOTE_USER" "${REMOTE_USER_HOME}/.local" 2>/dev/null || true
+            if [ "$VERSION" = "latest" ]; then
+                su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\"" && return
+            else
+                su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\" --version \"$VERSION\"" && return
+            fi
         else
-            su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\" --version \"$VERSION\""
+            export OPENCODE_INSTALL_DIR="$BIN_DIR"
+            export XDG_BIN_DIR="$BIN_DIR"
+            if [ "$VERSION" = "latest" ]; then
+                env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" && return
+            else
+                env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" --version "$VERSION" && return
+            fi
         fi
-    else
-        # Install to /usr/local/bin for system-wide access
-        export OPENCODE_INSTALL_DIR="$BIN_DIR"
-        export XDG_BIN_DIR="$BIN_DIR"
 
-        if [ "$VERSION" = "latest" ]; then
-            env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
-        else
-            env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" --version "$VERSION"
-        fi
-    fi
+        [ "$attempt" -eq 3 ] && return 1
+        echo "WARNING: OpenCode installer failed; retrying ($attempt/3)..." >&2
+        sleep "$attempt"
+    done
 }
 
 # Verify installation and create symlink if needed
