@@ -1,0 +1,8 @@
+{
+    "id": "agent-browser",
+    "version": "1.0.0",
+    "name": "Agent Browser",
+    "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/agent-browser",
+    "description": "Installs the agent-browser CLI and its separate Chrome-for-Testing runtime for interactive browser automation.",
+    "installsAfter": []
+}
