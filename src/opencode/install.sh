@@ -14,6 +14,11 @@ ENABLEMDNS="${ENABLEMDNS:-false}"
 ENABLEWEBMODE="${ENABLEWEBMODE:-false}"
 CORSORIGINS="${CORSORIGINS:-}"
 
+if [ "$VERSION" != "latest" ] && [[ ! "$VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "ERROR: version must be 'latest' or a semantic version (for example, 1.18.30)." >&2
+    exit 1
+fi
+
 if [ -n "$SERVERPASSWORD" ]; then
     echo "ERROR: serverPassword is no longer supported because feature options are stored in the image." >&2
     echo "Set OPENCODE_SERVER_PASSWORD at container runtime instead." >&2
@@ -192,11 +197,7 @@ install_native() {
         if [ "$VERSION" = "latest" ]; then
             su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\""
         else
-            # Note: Version pinning support varies by installer
-            if ! su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\" \"$VERSION\"" 2>/dev/null; then
-                echo "NOTE: Installer may not support version pinning. Installing latest."
-                su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\""
-            fi
+            su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\" --version \"$VERSION\""
         fi
     else
         # Install to /usr/local/bin for system-wide access
@@ -206,11 +207,7 @@ install_native() {
         if [ "$VERSION" = "latest" ]; then
             env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
         else
-            # Note: Version pinning support varies by installer
-            if ! env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" "$VERSION" 2>/dev/null; then
-                echo "NOTE: Installer may not support version pinning. Installing latest."
-                env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER"
-            fi
+            env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" --version "$VERSION"
         fi
     fi
 }

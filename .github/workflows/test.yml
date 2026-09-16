@@ -31,6 +31,7 @@ jobs:
           node test/auto-update/strategy-sources.js
           bash test/nerd-font/default-version.sh
           bash test/docs/opencode-and-volumes.sh
+          bash test/docs/feature-ordering.sh
           bash test/docs/generated-readmes.sh
 
       - name: "Run Smoke Tests"
