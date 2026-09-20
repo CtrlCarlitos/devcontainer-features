@@ -126,5 +126,13 @@
         "features": {
             "opencode": "latest"
         }
+    },
+    "api-blocked": {
+        "build": {
+            "dockerfile": "Dockerfile"
+        },
+        "features": {
+            "opencode": "latest"
+        }
     }
 }

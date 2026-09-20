@@ -189,24 +189,35 @@ install_native() {
 
     chmod +x "$INSTALLER"
 
+    # Resolve 'latest' via the release redirect on github.com so the installer
+    # never makes its unauthenticated api.github.com version lookup, which
+    # fails intermittently on shared CI runner IPs (anonymous API rate limits).
+    local installer_version_args=()
+    if [ "$VERSION" != "latest" ]; then
+        installer_version_args=(--version "$VERSION")
+    else
+        local redirect_url=""
+        redirect_url="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+            "https://github.com/anomalyco/opencode/releases/latest" 2>/dev/null || true)"
+        if [[ "$redirect_url" =~ /tag/v?([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            installer_version_args=(--version "${BASH_REMATCH[1]}")
+            echo "Resolved latest OpenCode version via release redirect: ${BASH_REMATCH[1]}"
+        else
+            echo "WARNING: Could not resolve latest version via release redirect; falling back to installer's own resolution." >&2
+        fi
+    fi
+
     for attempt in 1 2 3; do
         if [ "$REMOTE_USER" != "root" ] && [ "$(whoami)" = "root" ]; then
             # Install as target user so the installer doesn't land in /root.
             mkdir -p "${REMOTE_USER_HOME}/.local/bin" "${REMOTE_USER_HOME}/.local/state"
             chown -R "$REMOTE_USER:$REMOTE_USER" "${REMOTE_USER_HOME}/.local" 2>/dev/null || true
-            if [ "$VERSION" = "latest" ]; then
-                su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\"" && return
-            else
-                su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\" --version \"$VERSION\"" && return
-            fi
+            # Elements of installer_version_args are validated (digits/dots only), safe to inline.
+            su - "$REMOTE_USER" -c "OPENCODE_INSTALL_DIR=\"${REMOTE_USER_HOME}/.local/bin\" XDG_BIN_DIR=\"${REMOTE_USER_HOME}/.local/bin\" env -u VERSION -u OPENCODE_VERSION bash \"$INSTALLER\" ${installer_version_args[*]}" && return
         else
             export OPENCODE_INSTALL_DIR="$BIN_DIR"
             export XDG_BIN_DIR="$BIN_DIR"
-            if [ "$VERSION" = "latest" ]; then
-                env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" && return
-            else
-                env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" --version "$VERSION" && return
-            fi
+            env -u VERSION -u OPENCODE_VERSION bash "$INSTALLER" "${installer_version_args[@]}" && return
         fi
 
         [ "$attempt" -eq 3 ] && return 1
