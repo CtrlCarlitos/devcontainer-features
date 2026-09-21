@@ -14,12 +14,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
 
@@ -42,7 +42,7 @@ jobs:
       - name: Create Pull Request
         if: steps.check.outputs.updated == 'true'
         id: cpr
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
         with:
           token: ${{ secrets.PAT_DEVCONTAINER_FEATURES }}
           commit-message: "chore: auto-update feature versions"
@@ -56,6 +56,6 @@ jobs:
 
       - name: Enable Pull Request Automerge
         if: steps.cpr.outputs.pull-request-operation == 'created'
-        run: gh pr merge --auto --merge "${{ steps.cpr.outputs.pull-request-number }}"
+        run: gh pr merge --auto --squash "${{ steps.cpr.outputs.pull-request-number }}"
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_DEVCONTAINER_FEATURES }}
