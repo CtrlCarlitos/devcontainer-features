@@ -15,7 +15,7 @@ Installs OpenAI Codex CLI with headless mode and MCP server support. Uses npm (t
 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
-| version | Codex CLI version to install | string | 0.155.1 |
+| version | Codex CLI version to install | string | 0.156.1 |
 | installMethod | Installation method. 'npm' is primary method (recommended), 'binary' downloads from GitHub releases | string | npm |
 | enableMcpServer | Configure Codex to be available as an MCP server for other agents | boolean | false |
 | authMethod | Preferred authentication method. 'api-key' uses OPENAI_API_KEY, 'chatgpt' uses browser OAuth, 'device-code' is experimental headless auth | string | none |
