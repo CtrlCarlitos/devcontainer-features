@@ -13,6 +13,16 @@ jobs:
       pull-requests: write
 
     steps:
+      # GitHub App installation token instead of the classic PAT: commits the
+      # API signs (so main can require signatures), PRs that still trigger
+      # test.yml, and a credential scoped to this repo that expires in an hour.
+      - name: Mint updater token
+        id: app
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.UPDATER_APP_ID }}
+          private-key: ${{ secrets.UPDATER_APP_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -44,7 +54,7 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          token: ${{ secrets.PAT_DEVCONTAINER_FEATURES }}
+          token: ${{ steps.app.outputs.token }}
           # Commit through the GitHub API so GitHub signs it; lets main require signed commits.
           sign-commits: true
           commit-message: "chore: auto-update feature versions"
@@ -60,4 +70,4 @@ jobs:
         if: steps.cpr.outputs.pull-request-operation == 'created'
         run: gh pr merge --auto --squash "${{ steps.cpr.outputs.pull-request-number }}"
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_DEVCONTAINER_FEATURES }}
+          GITHUB_TOKEN: ${{ steps.app.outputs.token }}
