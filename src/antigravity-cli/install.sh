@@ -13,8 +13,35 @@ fi
 # Downloaded to a temp file and run separately so pipefail can't kill
 # the post-install symlink step on benign installer stderr output.
 echo "Installing Antigravity CLI..."
+INSTALLER_URL="https://antigravity.google/cli/install.sh"
 INSTALLER=$(mktemp /tmp/agy-install-XXXXXX.sh)
-curl -fsSL https://antigravity.google/cli/install.sh -o "$INSTALLER"
+
+# The upstream CDN has intermittently answered HTTP 200 with an EMPTY body
+# (CI runs 2026-09-23 08:06 and 2026-09-24 00:06). curl -f is happy with
+# that, bash runs an empty file silently, and the feature fails a step later
+# with "binary not found". So: retry the download, and refuse to run anything
+# that is not recognisably a shell script.
+fetch_installer() {
+    local attempt
+    for attempt in 1 2 3 4 5; do
+        : > "$INSTALLER"
+        if curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 \
+                "$INSTALLER_URL" -o "$INSTALLER" \
+            && [ -s "$INSTALLER" ] \
+            && head -c 2 "$INSTALLER" | grep -q '^#!' ; then
+            return 0
+        fi
+        echo "  installer download attempt $attempt unusable ($(wc -c < "$INSTALLER") bytes); retrying..."
+        sleep $((attempt * 3))
+    done
+    return 1
+}
+
+if ! fetch_installer; then
+    echo "ERROR: could not download a valid installer from $INSTALLER_URL after 5 attempts."
+    rm -f "$INSTALLER"
+    exit 1
+fi
 bash "$INSTALLER" || echo "  (installer reported non-zero; continuing to check binary)"
 rm -f "$INSTALLER"
 
