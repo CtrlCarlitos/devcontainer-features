@@ -6,6 +6,10 @@ const source = fs.readFileSync(
     path.join(repositoryRoot, '.github/scripts/check-updates.js'),
     'utf8'
 );
+const workflow = fs.readFileSync(
+    path.join(repositoryRoot, '.github/workflows/auto-update.yml'),
+    'utf8'
+);
 const strategies = source.match(/const STRATEGIES = \{([\s\S]*?)\n\};/);
 
 if (!strategies) {
@@ -19,6 +23,14 @@ const missing = featureIds.filter(
 
 if (missing.length > 0) {
     throw new Error(`Auto-Update strategies without source features: ${missing.join(', ')}`);
+}
+
+if (!workflow.includes('client-id: ${{ secrets.UPDATER_APP_CLIENT_ID }}')) {
+    throw new Error('Auto-Update must mint its token with UPDATER_APP_CLIENT_ID');
+}
+
+if (/^\s+app-id:/m.test(workflow)) {
+    throw new Error('Auto-Update must not use the deprecated app-id input');
 }
 
 console.log(`Auto-Update strategies match ${featureIds.length} source features.`);
