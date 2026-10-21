@@ -27,7 +27,7 @@ ensure_node_24() {
     echo "Installing Node.js 24..."
     export NVM_DIR=/usr/local/share/nvm
     mkdir -p "$NVM_DIR"
-    curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
     # shellcheck source=/dev/null
     . "$NVM_DIR/nvm.sh"
     nvm install 24

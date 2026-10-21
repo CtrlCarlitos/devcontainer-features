@@ -16,7 +16,7 @@ ensure_node() {
     mkdir -p "$NVM_DIR"
     export NVM_DIR
 
-    curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     nvm install 22
     nvm alias default 22

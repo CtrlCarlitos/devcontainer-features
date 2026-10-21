@@ -1,6 +1,6 @@
 {
     "id": "runtime_core",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "name": "Runtime Core (Node.js)",
     "description": "Installs Node.js via nvm if not already present. Skips installation if Node.js is detected.",
     "options": {

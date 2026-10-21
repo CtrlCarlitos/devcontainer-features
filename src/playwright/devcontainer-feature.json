@@ -1,6 +1,6 @@
 {
     "id": "playwright",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "Playwright",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/playwright",
     "description": "Installs Playwright globally plus the Chromium browser — browser automation for AI agents (scraping, testing, end-to-end flows).",
