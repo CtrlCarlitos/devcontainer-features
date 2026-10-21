@@ -3,14 +3,14 @@ set -euo pipefail
 
 echo "Guardrail Feature"
 
-VERSION="${VERSION:-v0.18.0-dev}"
-ASSET="guardrail_linux_amd64.exe"
+VERSION="${VERSION:-v0.23.36-dev}"
+ASSET="guardrail_linux_amd64"
 BASE_URL="https://github.com/CtrlCarlitos/agent-guardrails/releases/download/${VERSION}"
 INSTALL_PATH="/usr/local/bin/guardrail"
 
 # Idempotent: skip if already installed at the default pin (an explicit
 # version override forces a reinstall)
-if [ -x "$INSTALL_PATH" ] && [ "$VERSION" = "v0.18.0-dev" ]; then
+if [ -x "$INSTALL_PATH" ] && [ "$VERSION" = "v0.23.36-dev" ]; then
     echo "Guardrail already installed at $INSTALL_PATH. Skipping."
     echo "  (set the 'version' option to force a reinstall/upgrade)"
     exit 0

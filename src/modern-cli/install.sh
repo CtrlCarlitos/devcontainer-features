@@ -4,14 +4,14 @@ set -euo pipefail
 echo "Modern CLI Tools Feature"
 
 # Pinned fallback versions (used when apt doesn't carry the package)
-BAT_VERSION="v0.24.0"
-EZA_VERSION="v0.20.16"
-FD_VERSION="v10.2.0"
-RIPGREP_VERSION="14.1.1"
-DELTA_VERSION="0.18.2"
-FZF_VERSION="0.56.3"
-JQ_VERSION="jq-1.7.1"
-DUF_VERSION="v0.8.1"
+BAT_VERSION="v0.26.1"
+EZA_VERSION="v0.23.5"
+FD_VERSION="v10.5.0"
+RIPGREP_VERSION="15.2.0"
+DELTA_VERSION="0.20.1"
+FZF_VERSION="0.74.5"
+JQ_VERSION="jq-1.8.2"
+DUF_VERSION="v0.9.1"
 
 APT_UPDATED=0
 
@@ -117,9 +117,9 @@ else
     if try_apt eza; then
         link_bin eza "$(command -v eza || true)"
         echo "eza: installed via apt"
-    elif [ -n "$MUSL" ]; then
+    elif [ -n "$GNU" ]; then
         install_tarball \
-            "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${MUSL}.tar.gz" \
+            "https://github.com/eza-community/eza/releases/download/${EZA_VERSION}/eza_${GNU}.tar.gz" \
             eza eza
         echo "eza: installed from GitHub release ${EZA_VERSION}"
     else

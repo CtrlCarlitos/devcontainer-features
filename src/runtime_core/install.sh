@@ -107,7 +107,7 @@ verify_download() {
 # Install nvm (pinned version for reproducibility)
 export NVM_DIR
 NVM_INSTALLER="/tmp/nvm-installer-$$.sh"
-curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh -o "$NVM_INSTALLER"
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh -o "$NVM_INSTALLER"
 
 # Optional: Set NVM_SHA256 environment variable to verify integrity
 if [ -n "${NVM_SHA256:-}" ]; then
