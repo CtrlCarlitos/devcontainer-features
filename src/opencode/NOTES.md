@@ -5,7 +5,7 @@
 
 ```json
 "features": {
-    "ghcr.io/ctrlcarlitos/devcontainer-features/opencode:1": {
+    "ghcr.io/ctrlcarlitos/devcontainer-features/opencode:2": {
         "enableServer": true,
         "enableWebMode": true,
         "serverHostname": "0.0.0.0",  // Explicitly set for network access (default is 127.0.0.1 for security)
@@ -33,7 +33,7 @@ The OpenCode server is configured to start automatically via `postStartCommand`.
 
 ```json
 "features": {
-    "ghcr.io/ctrlcarlitos/devcontainer-features/opencode:1": {
+    "ghcr.io/ctrlcarlitos/devcontainer-features/opencode:2": {
         "enableServer": true,
         "enableWebMode": true,
         "corsOrigins": "http://localhost:4096"
@@ -51,6 +51,10 @@ The OpenCode server is configured to start automatically via `postStartCommand`.
 > // "appPort": [4096]
 > ```
 > Without this, `host.docker.internal:4096` on the host will not reach the container.
+
+## Migrating to Feature v2
+
+Unversioned and `:latest` references automatically receive v2 after publication. If a configuration still passes `serverPassword`, the image build fails because feature options are stored in the image. Remove that option and provide `OPENCODE_SERVER_PASSWORD` through `containerEnv` at runtime, as shown above.
 
 ## Recent Changes & Features (v1.1.7+)
 
