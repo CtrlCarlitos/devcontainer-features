@@ -1,6 +1,6 @@
 {
     "id": "curated-skills",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "name": "Curated Agent Skills",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/curated-skills",
     "description": "Installs curated AI-agent skills for Claude Code, OpenCode, Antigravity, and Codex; Antigravity receives skills in both its IDE and CLI global directories.",

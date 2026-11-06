@@ -19,6 +19,18 @@
             }
         }
     },
+    "node-20": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "runtime_core": {
+                "version": "20"
+            },
+            "curated-skills": {
+                "skills": "vercel-labs/skills:find-skills",
+                "agents": "claude-code"
+            }
+        }
+    },
     "claude-only": {
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {

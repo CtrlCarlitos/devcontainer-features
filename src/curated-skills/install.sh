@@ -8,6 +8,9 @@ REMOTE_USER_HOME="${_REMOTE_USER_HOME:-/home/$REMOTE_USER}"
 
 SKILLS="${SKILLS:-vercel-labs/skills:find-skills,vercel-labs/agent-browser:agent-browser,anthropics/skills:skill-creator,anthropics/skills:frontend-design,mattpocock/skills:codebase-design,mattpocock/skills:domain-modeling,mattpocock/skills:grill-with-docs,mattpocock/skills:improve-codebase-architecture,mattpocock/skills:prototype,mattpocock/skills:research,mattpocock/skills:grilling,mattpocock/skills:handoff,mattpocock/skills:teach,mattpocock/skills:writing-for-agents,mattpocock/skills:code-review>mp-code-review}"
 AGENTS="${AGENTS:-claude-code,opencode,antigravity,codex}"
+# Newer releases require Node >=22.20.0; this is the latest release that
+# officially supports Node >=18, including downstream containers pinned to 20.
+SKILLS_CLI_PACKAGE="skills@1.5.18"
 
 if ! command -v npx &> /dev/null; then
     echo "ERROR: npx not found. Add the runtime_core feature (or another Node.js source) before curated-skills."
@@ -108,7 +111,7 @@ STAGED_SKILLS="$STAGING_HOME/.claude/skills"
 if [ "${#REPO_SKILLS[@]}" -gt 0 ]; then
     for repo in "${!REPO_SKILLS[@]}"; do
         echo "Installing skills from $repo: ${REPO_SKILLS[$repo]}"
-        HOME="$STAGING_HOME" npx --yes --loglevel=error skills@latest add "$repo" \
+        HOME="$STAGING_HOME" npx --yes --loglevel=error "$SKILLS_CLI_PACKAGE" add "$repo" \
             -s ${REPO_SKILLS[$repo]} -a claude-code -g -y --copy < /dev/null
     done
 fi
@@ -143,7 +146,7 @@ install_renamed_skill() {
     mv "$tmp/stage/$newname/SKILL.md.tmp" "$tmp/stage/$newname/SKILL.md"
 
     echo "Installing renamed skill: $repo/$skill -> $newname"
-    HOME="$STAGING_HOME" npx --yes --loglevel=error skills@latest add "$tmp/stage" \
+    HOME="$STAGING_HOME" npx --yes --loglevel=error "$SKILLS_CLI_PACKAGE" add "$tmp/stage" \
         -s "$newname" -a claude-code -g -y --copy < /dev/null
     rm -rf "$tmp"
 }
