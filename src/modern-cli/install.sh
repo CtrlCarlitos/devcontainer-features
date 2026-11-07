@@ -6,10 +6,10 @@ echo "Modern CLI Tools Feature"
 # Pinned fallback versions (used when apt doesn't carry the package)
 BAT_VERSION="v0.26.1"
 EZA_VERSION="v0.23.5"
-FD_VERSION="v10.5.1"
+FD_VERSION="v10.5.2"
 RIPGREP_VERSION="15.2.0"
 DELTA_VERSION="0.20.1"
-FZF_VERSION="0.74.5"
+FZF_VERSION="0.75.0"
 JQ_VERSION="jq-1.8.2"
 DUF_VERSION="v0.9.1"
 
