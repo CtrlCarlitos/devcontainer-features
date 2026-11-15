@@ -1,13 +1,13 @@
 {
     "id": "guardrail",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "name": "Guardrail",
     "documentationURL": "https://github.com/CtrlCarlitos/devcontainer-features/tree/main/src/guardrail",
     "description": "Installs Guardrail (agent-guardrails) — safety guardrails for AI coding agents. Downloads the pinned release binary with SHA256 verification.",
     "options": {
         "version": {
             "type": "string",
-            "default": "v0.23.36-dev",
+            "default": "v0.23.40-dev",
             "description": "Release tag to install"
         }
     }
