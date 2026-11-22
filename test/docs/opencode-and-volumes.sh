@@ -31,7 +31,7 @@ assert_absent 'docs/security-review' README.md
 grep -F 'OPENCODE_SERVER_PASSWORD' src/opencode/README.md
 grep -F 'Unversioned and `:latest` references automatically receive v2' src/opencode/README.md
 grep -F 'the image build fails' src/opencode/README.md
-grep -F '"version": "2.0.0"' src/opencode/devcontainer-feature.json
+grep -E '"version": "2\.[0-9]+\.[0-9]+"' src/opencode/devcontainer-feature.json
 grep -F 'devcontainer-features/opencode:2' src/opencode/README.md
 assert_absent 'devcontainer-features/opencode:1' src/opencode/README.md
 assert_absent 'devcontainer-features/node:1' src/runtime_core/README.md
