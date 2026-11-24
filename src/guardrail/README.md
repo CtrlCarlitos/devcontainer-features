@@ -15,7 +15,7 @@ Installs Guardrail (agent-guardrails) — safety guardrails for AI coding agents
 
 | Options Id | Description | Type | Default Value |
 |-----|-----|-----|-----|
-| version | Release tag to install | string | v0.23.48-dev |
+| version | Release tag to install | string | v0.23.53-dev |
 
 
 
