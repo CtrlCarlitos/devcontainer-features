@@ -4,7 +4,7 @@ set -euo pipefail
 echo "Modern CLI Tools Feature"
 
 # Pinned fallback versions (used when apt doesn't carry the package)
-BAT_VERSION="v0.26.1"
+BAT_VERSION="v0.27.0"
 EZA_VERSION="v0.23.5"
 FD_VERSION="v10.5.2"
 RIPGREP_VERSION="16.0.0"
